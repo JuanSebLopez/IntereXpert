@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/services/simple_rate_interest_calculation_service.dart';
+import '../../data/services/rate_interest_calculation_service.dart';
 import '../widgets/time_input.dart';
 
 class SimpleRateInterestCalculationScreen extends StatefulWidget {
@@ -32,7 +32,7 @@ class _SimpleRateInterestCalculationScreenState
       }
 
       double tasa =
-          SimpleRateInterestCalculationService.simpleRateInterestCalculation(
+          RateInterestCalculationService.simpleRateInterestCalculation(
             monto: monto,
             capital: capital,
             tiempo: tiempo,
