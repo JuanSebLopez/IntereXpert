@@ -50,7 +50,7 @@ class _CompoundRateInterestCalculationScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cálculo de Tasa de Interés Compuesta"),
+        title: const Text("Tasa de Interés Compuesto"),
         centerTitle: true,
       ),
       body: SingleChildScrollView(

@@ -54,7 +54,7 @@ class _SimpleRateInterestCalculationScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cálculo de Tasa de Interés Simple"),
+        title: const Text("Tasa de Interés Simple"),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
