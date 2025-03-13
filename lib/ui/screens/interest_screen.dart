@@ -11,7 +11,7 @@ class InterestScreen extends StatelessWidget {
         subtitle: "Calcular o convertir Tasas",
         icon: Icons.trending_up,
         onTap: () {
-          Navigator.pushNamed(context, '/rate_interest');
+          Navigator.pushNamed(context, '/rate-interest');
         },
       ),
       _InteresOption(
@@ -19,7 +19,7 @@ class InterestScreen extends StatelessWidget {
         subtitle: "Fórmulas para I. Simple",
         icon: Icons.calculate,
         onTap: () {
-          Navigator.pushNamed(context, '/simple_interest');
+          Navigator.pushNamed(context, '/simple-interest');
         },
       ),
       _InteresOption(

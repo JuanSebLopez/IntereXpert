@@ -14,7 +14,7 @@ class _RateInterestScreenState extends State<RateInterestScreen> {
   final List<String> formulas = [
     r'i = \frac{(M - C)}{(C \cdot t)} \cdot 100',
     r'i = \left( \frac{M}{C} \right)^{\frac{1}{t}} - 1 \cdot 100',
-    r'i = ...', // Placeholder para Nominal/Efectiva
+    r'i = ...',
   ];
 
   final List<String> titles = [
@@ -24,8 +24,23 @@ class _RateInterestScreenState extends State<RateInterestScreen> {
   ];
 
   void _onAccept() {
-    // Navegación basada en la selección actual
-    // Aquí puedes configurar hacia dónde navegar según el índice seleccionado
+    switch (_selectedOption) {
+      case 0:
+        Navigator.pushNamed(context, '/simple-rate-interest');
+        break;
+      case 1:
+        Navigator.pushNamed(context, '/compound-rate-interest');
+        break;
+      case 2:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Esta opción estará disponible en futuras versiones.',
+            ),
+          ),
+        );
+        break;
+    }
   }
 
   @override
