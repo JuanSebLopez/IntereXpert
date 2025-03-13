@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_navbar.dart'; // Importamos el nuevo widget
+import 'package:interesxpert/ui/screens/dashhome_screen.dart';
+import 'package:interesxpert/ui/widgets/bottom_navbar.dart';
+import 'interest_screen.dart';
+import 'atm_screen.dart';
+import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -11,6 +15,13 @@ class DashboardScreen extends StatefulWidget {
 class DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
 
+  final List<Widget> _screens = [
+    DashhomeScreen(),
+    InterestScreen(),
+    AtmScreen(),
+    ProfileScreen(),
+  ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -20,12 +31,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Text(
-          "Pantalla ${_selectedIndex + 1}", // Aquí luego irán las pantallas reales
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
+      body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
