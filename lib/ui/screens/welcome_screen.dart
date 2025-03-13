@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:interesxpert/routes.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
