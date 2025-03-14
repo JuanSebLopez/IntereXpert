@@ -88,7 +88,7 @@ class _SimpleRateInterestCalculationScreenState
             TimeInputWidget(
               onFixedTimeChanged: (time, inputUnit) {
                 setState(() {
-                  _fixedTime = time.toDouble();
+                  _fixedTime = time?.toDouble();
                   _unitInput = inputUnit;
                 });
               },

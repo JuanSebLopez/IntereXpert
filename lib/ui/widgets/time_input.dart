@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class TimeInputWidget extends StatefulWidget {
-  final Function(int, String) onFixedTimeChanged;
+  final Function(int?, String) onFixedTimeChanged;
   final Function(DateTime start, DateTime end) onCalculatedTimeChanged;
   final Function(String) onUnitForCalculationChanged;
 
@@ -18,7 +18,7 @@ class TimeInputWidget extends StatefulWidget {
 
 class _TimeInputWidgetState extends State<TimeInputWidget> {
   bool _isFixedTime = true;
-  int _fixedTime = 0;
+  int? _fixedTime;
   String _selectedInputUnit = 'Mensual';
   String _selectedCalculationUnit = 'Mensual';
 
@@ -38,6 +38,15 @@ class _TimeInputWidgetState extends State<TimeInputWidget> {
     'Semestral',
     'Anual',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onFixedTimeChanged(_fixedTime, _selectedInputUnit);
+      widget.onUnitForCalculationChanged(_selectedCalculationUnit);
+    });
+  }
 
   void _selectDate(bool isStartDate) async {
     DateTime? pickedDate = await showDatePicker(
@@ -79,10 +88,7 @@ class _TimeInputWidgetState extends State<TimeInputWidget> {
         const SizedBox(height: 10),
         const Text("Unidad para el cálculo"),
         DropdownButton<String>(
-          value:
-              _timeUnits.contains(_selectedCalculationUnit)
-                  ? _selectedCalculationUnit
-                  : _timeUnits.first,
+          value: _selectedCalculationUnit,
           items:
               _timeUnits.map((unit) {
                 return DropdownMenuItem(value: unit, child: Text(unit));
@@ -101,10 +107,7 @@ class _TimeInputWidgetState extends State<TimeInputWidget> {
               children: [
                 const Text("Unidad del tiempo fijo"),
                 DropdownButton<String>(
-                  value:
-                      _timeUnits.contains(_selectedInputUnit)
-                          ? _selectedInputUnit
-                          : _timeUnits.first,
+                  value: _selectedInputUnit,
                   items:
                       _timeUnits.map((unit) {
                         return DropdownMenuItem(value: unit, child: Text(unit));
@@ -112,6 +115,7 @@ class _TimeInputWidgetState extends State<TimeInputWidget> {
                   onChanged: (value) {
                     setState(() {
                       _selectedInputUnit = value!;
+                      widget.onFixedTimeChanged(_fixedTime, _selectedInputUnit);
                     });
                   },
                 ),
@@ -124,7 +128,7 @@ class _TimeInputWidgetState extends State<TimeInputWidget> {
                   ),
                   onChanged: (value) {
                     setState(() {
-                      _fixedTime = int.tryParse(value) ?? 0;
+                      _fixedTime = value.isEmpty ? null : int.tryParse(value);
                       widget.onFixedTimeChanged(_fixedTime, _selectedInputUnit);
                     });
                   },

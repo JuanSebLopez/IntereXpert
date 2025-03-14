@@ -50,7 +50,7 @@ class _CompoundRateInterestCalculationScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Tasa de Interés Compuesto"),
+        title: const Text("Tasa de Interés Compuesta"),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -84,7 +84,7 @@ class _CompoundRateInterestCalculationScreenState
             TimeInputWidget(
               onFixedTimeChanged: (time, unit) {
                 setState(() {
-                  _fixedTime = time.toDouble();
+                  _fixedTime = time?.toDouble();
                   _unitTimeInput = unit;
                 });
               },

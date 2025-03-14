@@ -27,7 +27,7 @@ class InterestScreen extends StatelessWidget {
         subtitle: "Fórmulas para I. Compuesto",
         icon: Icons.auto_graph,
         onTap: () {
-          // Navegar a la pantalla de Interés Compuesto
+          Navigator.pushNamed(context, '/compound-interest');
         },
       ),
       _InteresOption(
@@ -87,6 +87,7 @@ class _InteresOption {
 
 class _InteresCard extends StatelessWidget {
   final _InteresOption option;
+  // ignore: use_super_parameters
   const _InteresCard({Key? key, required this.option}) : super(key: key);
 
   @override

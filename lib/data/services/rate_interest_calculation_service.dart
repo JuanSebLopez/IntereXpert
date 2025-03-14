@@ -14,12 +14,18 @@ class RateInterestCalculationService {
       );
     }
 
-    // Convertir el tiempo a la unidad seleccionada
-    double tiempoConvertido = _convertirTiempo(
-      tiempo,
-      unidadTiempo,
-      unidadEcuacion,
-    );
+    double tiempoConvertido = tiempo;
+
+    // Convertir el tiempo solo si las unidades son diferentes
+    if (unidadTiempo != unidadEcuacion) {
+      tiempoConvertido = _convertirTiempo(tiempo, unidadTiempo, unidadEcuacion);
+    }
+
+    if (tiempoConvertido <= 0) {
+      throw ArgumentError(
+        'El tiempo convertido no puede ser menor o igual a cero.',
+      );
+    }
 
     double tasa = ((monto - capital) / (capital * tiempoConvertido)) * 100;
     return double.parse(tasa.toStringAsFixed(4));
@@ -38,81 +44,52 @@ class RateInterestCalculationService {
       );
     }
 
-    // Convertir el tiempo a la unidad seleccionada
-    double tiempoConvertido = _convertirTiempo(
-      tiempo,
-      unidadTiempo,
-      unidadEcuacion,
-    );
+    double tiempoConvertido = tiempo;
+
+    // Convertir el tiempo solo si las unidades son diferentes
+    if (unidadTiempo != unidadEcuacion) {
+      tiempoConvertido = _convertirTiempo(tiempo, unidadTiempo, unidadEcuacion);
+    }
+
+    if (tiempoConvertido <= 0) {
+      throw ArgumentError(
+        'El tiempo convertido no puede ser menor o igual a cero.',
+      );
+    }
 
     double tasa = (pow((monto / capital), (1 / tiempoConvertido)) - 1) * 100;
     return double.parse(tasa.toStringAsFixed(4));
   }
 
+  // Conversión personalizada sin utilizar TimeUnitConverter
   static double _convertirTiempo(
     double tiempo,
     String unidadOrigen,
     String unidadDestino,
   ) {
-    double tiempoEnDias = _convertirTiempoADias(tiempo, unidadOrigen);
-    return _convertirDiasATiempo(tiempoEnDias, unidadDestino);
-  }
+    const Map<String, double> conversionADias = {
+      'segundos': 1 / (24 * 60 * 60),
+      'minutos': 1 / (24 * 60),
+      'horas': 1 / 24,
+      'días': 1,
+      'semanas': 7,
+      'mensual': 30,
+      'bimestral': 60,
+      'trimestral': 90,
+      'cuatrimestral': 120,
+      'semestral': 180,
+      'anual': 365,
+    };
 
-  static double _convertirTiempoADias(double tiempo, String unidadTiempo) {
-    switch (unidadTiempo.toLowerCase()) {
-      case 'segundos':
-        return tiempo / (24 * 60 * 60);
-      case 'minutos':
-        return tiempo / (24 * 60);
-      case 'horas':
-        return tiempo / 24;
-      case 'días':
-        return tiempo;
-      case 'semanas':
-        return tiempo * 7;
-      case 'mensual':
-        return tiempo * 30;
-      case 'bimestral':
-        return tiempo * 60;
-      case 'trimestral':
-        return tiempo * 90;
-      case 'cuatrimestral':
-        return tiempo * 120;
-      case 'semestral':
-        return tiempo * 180;
-      case 'anual':
-        return tiempo * 365;
-      default:
-        throw ArgumentError('Unidad de tiempo no reconocida.');
+    if (!conversionADias.containsKey(unidadOrigen.toLowerCase()) ||
+        !conversionADias.containsKey(unidadDestino.toLowerCase())) {
+      throw ArgumentError('Unidad de tiempo no reconocida.');
     }
-  }
 
-  static double _convertirDiasATiempo(double dias, String unidadTiempo) {
-    switch (unidadTiempo.toLowerCase()) {
-      case 'segundos':
-        return dias * 24 * 60 * 60;
-      case 'minutos':
-        return dias * 24 * 60;
-      case 'horas':
-        return dias * 24;
-      case 'días':
-        return dias;
-      case 'semanas':
-        return dias / 7;
-      case 'mensual':
-        return dias / 30;
-      case 'bimestral':
-        return dias / 60;
-      case 'trimestral':
-        return dias / 90;
-      case 'cuatrimestral':
-        return dias / 120;
-      case 'semestral':
-        return dias / 180;
-      case 'anual':
-        return dias / 365.25;
-      default:
-        throw ArgumentError('Unidad de tiempo no reconocida.');
-    }
+    // Convertir el tiempo a días y luego a la unidad destino
+    double tiempoEnDias = tiempo * conversionADias[unidadOrigen.toLowerCase()]!;
+    double tiempoConvertido =
+        tiempoEnDias / conversionADias[unidadDestino.toLowerCase()]!;
+    return tiempoConvertido;
   }
 }

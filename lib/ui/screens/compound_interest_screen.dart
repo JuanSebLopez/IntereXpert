@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:interesxpert/data/services/simple_interest_service.dart';
+import 'package:interesxpert/data/services/compound_interest_service.dart';
 
-class SimpleInterestScreen extends StatefulWidget {
-  const SimpleInterestScreen({super.key});
+class CompoundInterestScreen extends StatefulWidget {
+  const CompoundInterestScreen({super.key});
 
   @override
-  State<SimpleInterestScreen> createState() => _SimpleInterestScreenState();
+  State<CompoundInterestScreen> createState() => _CompoundInterestScreenState();
 }
 
-class _SimpleInterestScreenState extends State<SimpleInterestScreen> {
-  final TextEditingController _interestController = TextEditingController();
-  final TextEditingController _rateController = TextEditingController();
+class _CompoundInterestScreenState extends State<CompoundInterestScreen> {
+  final TextEditingController _montoCompuestoController =
+      TextEditingController();
   final TextEditingController _capitalController = TextEditingController();
+  final TextEditingController _rateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
 
   String _unitInput = 'Mensual';
@@ -41,27 +42,27 @@ class _SimpleInterestScreenState extends State<SimpleInterestScreen> {
     });
 
     try {
-      double? interest =
-          _interestController.text.isNotEmpty
-              ? double.tryParse(_interestController.text)
-              : null;
-      double? rate =
-          _rateController.text.isNotEmpty
-              ? double.tryParse(_rateController.text)
+      double? montoCompuesto =
+          _montoCompuestoController.text.isNotEmpty
+              ? double.tryParse(_montoCompuestoController.text)
               : null;
       double? capital =
           _capitalController.text.isNotEmpty
               ? double.tryParse(_capitalController.text)
+              : null;
+      double? rate =
+          _rateController.text.isNotEmpty
+              ? double.tryParse(_rateController.text)
               : null;
       double? time =
           _timeController.text.isNotEmpty
               ? double.tryParse(_timeController.text)
               : null;
 
-      final result = SimpleInterestService.calculate(
-        interest: interest,
-        rate: rate,
+      final result = CompoundInterestService.calculate(
+        montoCompuesto: montoCompuesto,
         capital: capital,
+        rate: rate,
         time: time,
         unitInput: time != null ? _unitInput : 'Mensual',
         unitForCalculation: _unitForCalculation,
@@ -70,7 +71,7 @@ class _SimpleInterestScreenState extends State<SimpleInterestScreen> {
       String displayResult = result.value.toString();
 
       switch (result.variableCalculated) {
-        case 'I':
+        case 'MC':
         case 'C':
           displayResult = "\$${displayResult}";
           break;
@@ -95,7 +96,7 @@ class _SimpleInterestScreenState extends State<SimpleInterestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Interés Simple"), centerTitle: true),
+      appBar: AppBar(title: const Text("Interés Compuesto"), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -107,18 +108,9 @@ class _SimpleInterestScreenState extends State<SimpleInterestScreen> {
             ),
             const SizedBox(height: 16),
             TextField(
-              controller: _interestController,
+              controller: _montoCompuestoController,
               decoration: const InputDecoration(
-                labelText: "Interés (I)",
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _rateController,
-              decoration: const InputDecoration(
-                labelText: "Tasa de Interés (i - Décimal)",
+                labelText: "Monto Compuesto (MC)",
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
@@ -128,6 +120,15 @@ class _SimpleInterestScreenState extends State<SimpleInterestScreen> {
               controller: _capitalController,
               decoration: const InputDecoration(
                 labelText: "Capital (C)",
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _rateController,
+              decoration: const InputDecoration(
+                labelText: "Tasa de Interés (i - Décimal)",
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
@@ -171,7 +172,7 @@ class _SimpleInterestScreenState extends State<SimpleInterestScreen> {
               controller: _timeController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Cantidad de tiempo',
+                labelText: 'Cantidad de tiempo (t)',
                 border: OutlineInputBorder(),
               ),
             ),

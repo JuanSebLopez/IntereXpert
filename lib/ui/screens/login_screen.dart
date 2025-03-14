@@ -20,11 +20,13 @@ class LoginScreenState extends State<LoginScreen> {
     var user = await _authService.signInWithEmail(email, password);
     if (user != null) {
       Navigator.pushReplacementNamed(
+        // ignore: use_build_context_synchronously
         context,
         '/dashboard',
       ); // 🔹 Ahora redirige al Dashboard
     } else {
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text("Error en inicio de sesión")));
     }
@@ -34,11 +36,13 @@ class LoginScreenState extends State<LoginScreen> {
     var user = await _authService.signInWithGoogle();
     if (user != null) {
       Navigator.pushReplacementNamed(
+        // ignore: use_build_context_synchronously
         context,
         '/dashboard',
       ); // 🔹 Ahora redirige al Dashboard
     } else {
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text("Error con Google Sign-In")));
     }

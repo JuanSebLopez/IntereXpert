@@ -20,11 +20,13 @@ class RegisterScreenState extends State<RegisterScreen> {
     var user = await _authService.signUpWithEmail(email, password);
     if (user != null) {
       Navigator.pushReplacementNamed(
+        // ignore: use_build_context_synchronously
         context,
         '/login',
       ); // 🔹 Ahora redirige al Login
     } else {
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text("Error en el registro")));
     }
