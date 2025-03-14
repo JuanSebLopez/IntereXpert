@@ -27,7 +27,7 @@ class InterestScreen extends StatelessWidget {
         subtitle: "Fórmulas para I. Compuesto",
         icon: Icons.auto_graph,
         onTap: () {
-          // Navegar a la pantalla de Interés Compuesto
+          Navigator.pushNamed(context, '/compound-interest');
         },
       ),
       _InteresOption(
