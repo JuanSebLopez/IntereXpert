@@ -87,6 +87,7 @@ class _InteresOption {
 
 class _InteresCard extends StatelessWidget {
   final _InteresOption option;
+  // ignore: use_super_parameters
   const _InteresCard({Key? key, required this.option}) : super(key: key);
 
   @override
