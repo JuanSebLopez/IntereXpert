@@ -35,7 +35,7 @@ class InterestScreen extends StatelessWidget {
         subtitle: "Cálculos de anualidades",
         icon: Icons.attach_money,
         onTap: () {
-          // Navegar a la pantalla de Anualidades
+          Navigator.pushNamed(context, '/annuity');
         },
       ),
     ];
