@@ -1,4 +1,8 @@
 class TimeUnitConverter {
+  static const double _diasPorAno = 365.0;
+  static const double _diasPorMes = 30.0;
+  static const double _diasPorSemana = 7.0;
+
   static double convertirTiempo(
     double tiempo,
     String unidadOrigen,
@@ -19,19 +23,19 @@ class TimeUnitConverter {
       case 'días':
         return tiempo;
       case 'semanas':
-        return tiempo * 7;
+        return tiempo * _diasPorSemana;
       case 'mensual':
-        return tiempo * 30;
+        return tiempo * _diasPorMes;
       case 'bimestral':
-        return tiempo * 60;
+        return tiempo * (_diasPorMes * 2);
       case 'trimestral':
-        return tiempo * 90;
+        return tiempo * (_diasPorMes * 3);
       case 'cuatrimestral':
-        return tiempo * 120;
+        return tiempo * (_diasPorMes * 4);
       case 'semestral':
-        return tiempo * 180;
+        return tiempo * (_diasPorMes * 6);
       case 'anual':
-        return tiempo * 365;
+        return tiempo * _diasPorAno;
       default:
         throw ArgumentError('Unidad de tiempo no reconocida.');
     }
@@ -48,19 +52,19 @@ class TimeUnitConverter {
       case 'días':
         return dias;
       case 'semanas':
-        return dias / 7;
+        return dias / _diasPorSemana;
       case 'mensual':
-        return dias / 30;
+        return dias / _diasPorMes;
       case 'bimestral':
-        return dias / 60;
+        return dias / (_diasPorMes * 2);
       case 'trimestral':
-        return dias / 90;
+        return dias / (_diasPorMes * 3);
       case 'cuatrimestral':
-        return dias / 120;
+        return dias / (_diasPorMes * 4);
       case 'semestral':
-        return dias / 180;
+        return dias / (_diasPorMes * 6);
       case 'anual':
-        return dias / 365.25;
+        return dias / _diasPorAno;
       default:
         throw ArgumentError('Unidad de tiempo no reconocida.');
     }
