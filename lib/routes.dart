@@ -7,6 +7,7 @@ import 'package:interesxpert/ui/screens/rate_interest_screen.dart';
 import 'package:interesxpert/ui/screens/register_screen.dart';
 import 'package:interesxpert/ui/screens/simple_interest_screen.dart';
 import 'package:interesxpert/ui/screens/simple_rate_interest_calculation_screen.dart';
+import 'package:interesxpert/ui/screens/atm_screen.dart';
 import 'ui/screens/welcome_screen.dart';
 import 'ui/screens/login_screen.dart';
 
@@ -21,6 +22,7 @@ class AppRoutes {
   static const String simpleInterest = '/simple-interest';
   static const String simpleRateInterest = '/simple-rate-interest';
   static const String welcome = '/';
+  static const String atm = '/atm';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -36,6 +38,7 @@ class AppRoutes {
       simpleRateInterest:
           (context) => const SimpleRateInterestCalculationScreen(),
       welcome: (context) => const WelcomeScreen(),
+      atm: (context) => const ATMScreen(),
     };
   }
 }

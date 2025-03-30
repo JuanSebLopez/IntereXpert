@@ -18,7 +18,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   final List<Widget> _screens = [
     DashhomeScreen(),
     InterestScreen(),
-    AtmScreen(),
+    ATMScreen(),
     ProfileScreen(),
   ];
 
