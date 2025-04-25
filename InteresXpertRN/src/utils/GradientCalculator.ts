@@ -55,13 +55,6 @@ const GradientCalculator = (params: GradientParams): number => {
   // Convertir la tasa de interés según las unidades de tiempo usando la función exportada
   const iEffective = convertRate(i, unidadTasa, unidadTiempo);
 
-  // Validaciones básicas
-  if (iEffective === G && modo === "gradienteGeometrico") {
-    throw new Error(
-      "La tasa de interés y el crecimiento no pueden ser iguales en gradiente geométrico."
-    );
-  }
-
   if (modo === "gradienteAritmetico") {
     if (campoACalcular === "valorFuturo") {
       const term1 = (A * ((1 + iEffective) ** n - 1)) / iEffective;
@@ -75,6 +68,14 @@ const GradientCalculator = (params: GradientParams): number => {
   } else {
     // Para gradiente geométrico, G debe ser un porcentaje (decimal)
     const GDecimal = G / 100; // Convertir G a decimal solo para gradiente geométrico
+
+    // Validar que iEffective no sea igual a GDecimal
+    if (iEffective === GDecimal) {
+      throw new Error(
+        "La tasa de interés y el crecimiento no pueden ser iguales en gradiente geométrico."
+      );
+    }
+
     if (campoACalcular === "valorFuturo") {
       return (A * ((1 + GDecimal) ** n - 1)) / (iEffective - GDecimal);
     } else {

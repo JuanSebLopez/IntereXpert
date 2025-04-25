@@ -40,7 +40,7 @@ const GradientScreen: React.FC = () => {
   const [campoACalcular, setCampoACalcular] = useState<
     "valorFuturo" | "valorPresente"
   >("valorFuturo");
-  const [unidadTasa, setUnidadTasa] = useState("anual"); // Nuevo estado para la unidad de la tasa
+  const [unidadTasa, setUnidadTasa] = useState("anual");
   const [unidadTiempo, setUnidadTiempo] = useState("anual");
   const [resultado, setResultado] = useState<{
     valor: number;
@@ -55,7 +55,7 @@ const GradientScreen: React.FC = () => {
     setCrecimiento("");
     setModo("gradienteAritmetico");
     setCampoACalcular("valorFuturo");
-    setUnidadTasa("anual"); // Limpiar unidad de tasa
+    setUnidadTasa("anual");
     setUnidadTiempo("anual");
     setResultado(null);
   };
@@ -65,7 +65,7 @@ const GradientScreen: React.FC = () => {
       const A = parseFloat(renta);
       const i = parseFloat(tasaInteres) / 100; // Convertir a decimal
       const n = parseFloat(tiempo);
-      const G = parseFloat(crecimiento); // Crecimiento ya no es porcentaje
+      const G = parseFloat(crecimiento);
 
       if (isNaN(A) || isNaN(i) || isNaN(n) || isNaN(G)) {
         Alert.alert("Error", "Por favor, ingrese valores numéricos válidos");
@@ -79,14 +79,14 @@ const GradientScreen: React.FC = () => {
         crecimiento: G,
         modo,
         campoACalcular,
-        unidadTasa, // Pasar unidad de tasa
+        unidadTasa,
         unidadTiempo,
       });
 
       // Preparar los pasos intermedios y la fórmula
       let formula = "";
       let pasos: string[] = [];
-      const iEffective = convertRate(i, unidadTasa, unidadTiempo); // Tasa ajustada
+      const iEffective = convertRate(i, unidadTasa, unidadTiempo);
 
       if (modo === "gradienteAritmetico") {
         if (campoACalcular === "valorFuturo") {
@@ -135,7 +135,9 @@ const GradientScreen: React.FC = () => {
             `VF = ${A} × (${
               (1 + GDecimal) ** n
             } - 1) / (${iEffective} - ${GDecimal})`,
-            `VF = ${A} × ${(1 + GDecimal) ** n - 1} / ${iEffective - GDecimal}`,
+            `VF = ${A} × ${(1 + GDecimal) ** n - 1} / ${(
+              iEffective - GDecimal
+            ).toFixed(4)}`,
             `VF ≈ ${term.toFixed(2)}`,
           ];
         } else {
