@@ -1,13 +1,41 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Switch, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../navigation/AppNavigator';
+import { useAuth } from '../services/AuthContext';
 
 type DashboardNavigationProp = BottomTabNavigationProp<MainTabParamList, 'Dashboard'>;
 
 const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<DashboardNavigationProp>();
+  const { user, logout, isBiometricAvailable, enableBiometrics, checkBiometricAvailability } = useAuth();
+  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
+
+  useEffect(() => {
+    const checkBiometrics = async () => {
+      const available = await checkBiometricAvailability();
+      setBiometricsAvailable(available);
+    };
+    
+    checkBiometrics();
+  }, []);
+
+  const handleEnableBiometrics = async () => {
+    if (!user) return;
+    
+    try {
+      const success = await enableBiometrics(user.username);
+      if (success) {
+        Alert.alert('Éxito', 'Autenticación biométrica habilitada correctamente');
+      } else {
+        Alert.alert('Error', 'No se pudo habilitar la autenticación biométrica');
+      }
+    } catch (error) {
+      console.error('Error al habilitar biometría:', error);
+      Alert.alert('Error', 'Ocurrió un error al habilitar la biometría');
+    }
+  };
 
   const calculatorOptions = [
     {
@@ -40,8 +68,28 @@ const DashboardScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>InteresXpert</Text>
-        <Text style={styles.subtitle}>Selecciona una calculadora</Text>
+        <View style={styles.userInfo}>
+          <Text style={styles.welcome}>Bienvenido, {user?.name || user?.username}</Text>
+          <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Cerrar sesión</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {biometricsAvailable && (
+        <View style={styles.biometricOption}>
+          <Text style={styles.biometricText}>Habilitar inicio de sesión con biometría:</Text>
+          <Switch
+            value={user?.useBiometrics || false}
+            onValueChange={handleEnableBiometrics}
+            trackColor={{ false: "#ddd", true: "#7B1FA2" }}
+            thumbColor={user?.useBiometrics ? "#4527A0" : "#f4f3f4"}
+            disabled={user?.useBiometrics}
+          />
+        </View>
+      )}
+
+      <Text style={styles.subtitle}>Selecciona una calculadora</Text>
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.cardsContainer}>
@@ -75,10 +123,48 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  subtitle: {
+  userInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  welcome: {
     fontSize: 16,
     color: '#E1E1F5',
-    marginTop: 5,
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  logoutText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  biometricOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  biometricText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+    marginRight: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#555',
+    marginTop: 15,
+    marginLeft: 20,
+    marginBottom: 10,
   },
   scrollView: {
     flex: 1,

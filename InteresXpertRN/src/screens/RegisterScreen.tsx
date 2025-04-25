@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, SafeAreaView, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, SafeAreaView, ScrollView, Switch } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useAuth, User } from '../services/AuthContext';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
 
@@ -10,14 +12,50 @@ interface Props {
 }
 
 const RegisterScreen: React.FC<Props> = ({ navigation }) => {
+  const { register, checkBiometricAvailability } = useAuth();
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [fingerprint, setFingerprint] = useState('');
+  const [useBiometrics, setUseBiometrics] = useState(false);
+  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
+  const [biometricEnrolled, setBiometricEnrolled] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Verificar si la biometría está disponible cuando se carga el componente
+  useEffect(() => {
+    const checkBiometrics = async () => {
+      const available = await checkBiometricAvailability();
+      setBiometricsAvailable(available);
+    };
+    
+    checkBiometrics();
+  }, []);
+
+  // Capturar biometría del dispositivo
+  const captureBiometrics = async () => {
+    try {
+      const biometricAuth = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Verifica tu identidad con biometría',
+        fallbackLabel: 'Usar contraseña',
+        disableDeviceFallback: false,
+      });
+      
+      if (biometricAuth.success) {
+        setBiometricEnrolled(true);
+        Alert.alert('Éxito', 'Biometría registrada correctamente');
+      } else {
+        Alert.alert('Error', 'No se pudo registrar la biometría');
+      }
+    } catch (error) {
+      console.error('Error al registrar biometría:', error);
+      Alert.alert('Error', 'Ocurrió un problema al registrar la biometría');
+    }
+  };
+
   const handleRegister = async () => {
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !username || !password || !confirmPassword) {
       Alert.alert('Error', 'Por favor, completa todos los campos');
       return;
     }
@@ -27,24 +65,52 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
+    if (useBiometrics && !biometricEnrolled) {
+      Alert.alert('Error', 'Debes registrar tu biometría para continuar');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Aquí implementaríamos el registro con Firebase
-      // Por ahora, simulamos un registro exitoso
+      const newUser: User = {
+        name,
+        username,
+        password,
+        useBiometrics: useBiometrics && biometricEnrolled,
+        ...(fingerprint && { fingerprint })
+      };
+
+      // Simulamos un pequeño retraso para el registro
       setTimeout(() => {
+        const registerSuccess = register(newUser);
+        
         setLoading(false);
-        Alert.alert(
-          'Registro Exitoso', 
-          'Tu cuenta ha sido creada correctamente',
-          [{ text: 'Iniciar Sesión', onPress: () => navigation.navigate('Login') }]
-        );
-      }, 1500);
+        
+        if (registerSuccess) {
+          Alert.alert(
+            'Registro Exitoso', 
+            'Tu cuenta ha sido creada correctamente',
+            [{ text: 'Iniciar Sesión', onPress: () => navigation.navigate('Login') }]
+          );
+        } else {
+          Alert.alert('Error', 'El nombre de usuario ya existe. Prueba con otro.');
+        }
+      }, 1000);
     } catch (error) {
       setLoading(false);
       Alert.alert('Error', 'No se pudo completar el registro. Inténtalo de nuevo.');
       console.error(error);
     }
+  };
+
+  // Simulación de captura de huella
+  const captureFingerprint = () => {
+    // En un caso real, aquí integraríamos un lector de huellas
+    // Por ahora, generamos un código único aleatorio
+    const mockFingerprint = Math.random().toString(36).substring(2, 15);
+    setFingerprint(mockFingerprint);
+    Alert.alert('Huella capturada', 'La huella se ha registrado correctamente');
   };
 
   return (
@@ -65,13 +131,12 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             value={name}
             onChangeText={setName}
           />
-          
+
           <TextInput
             style={styles.input}
-            placeholder="Correo electrónico"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
+            placeholder="Nombre de usuario"
+            value={username}
+            onChangeText={setUsername}
             autoCapitalize="none"
           />
           
@@ -90,11 +155,52 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             onChangeText={setConfirmPassword}
             secureTextEntry
           />
+
+          {/* Opciones de biometría */}
+          {biometricsAvailable && (
+            <View style={styles.biometricContainer}>
+              <View style={styles.fingerprintOption}>
+                <Text style={styles.fingerprintText}>Usar biometría del dispositivo:</Text>
+                <Switch
+                  value={useBiometrics}
+                  onValueChange={(value) => {
+                    setUseBiometrics(value);
+                    if (value && !biometricEnrolled) {
+                      // Si se activa, abrir inmediatamente el escáner biométrico
+                      captureBiometrics();
+                    }
+                  }}
+                  trackColor={{ false: "#ddd", true: "#7B1FA2" }}
+                  thumbColor={useBiometrics ? "#4527A0" : "#f4f3f4"}
+                />
+              </View>
+              
+              {useBiometrics && !biometricEnrolled && (
+                <TouchableOpacity 
+                  style={styles.biometricButton} 
+                  onPress={captureBiometrics}
+                >
+                  <View style={styles.biometricButtonContent}>
+                    <Text style={styles.biometricButtonText}>Registrar huella biométrica</Text>
+                    <View style={styles.fingerprintIconContainer}>
+                      <Text style={styles.fingerprintIcon}>👆</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              )}
+              
+              {useBiometrics && biometricEnrolled && (
+                <View style={styles.enrolledContainer}>
+                  <Text style={styles.enrolledText}>✓ Biometría registrada correctamente</Text>
+                </View>
+              )}
+            </View>
+          )}
           
           <TouchableOpacity 
             style={styles.button} 
             onPress={handleRegister}
-            disabled={loading}
+            disabled={loading || (useBiometrics && !biometricEnrolled)}
           >
             <Text style={styles.buttonText}>
               {loading ? 'Procesando...' : 'Registrarse'}
@@ -144,6 +250,66 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     borderWidth: 1,
     borderColor: '#ddd',
+    fontSize: 16,
+  },
+  biometricContainer: {
+    marginVertical: 15,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 15,
+  },
+  fingerprintOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+  },
+  fingerprintText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+    marginRight: 10,
+  },
+  biometricButton: {
+    backgroundColor: '#4527A0',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 15,
+  },
+  biometricButtonContent: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  biometricButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 10,
+  },
+  fingerprintIconContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fingerprintIcon: {
+    fontSize: 20,
+  },
+  enrolledContainer: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  enrolledText: {
+    color: '#2E7D32',
     fontSize: 16,
   },
   button: {
