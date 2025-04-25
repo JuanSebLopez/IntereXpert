@@ -8,7 +8,7 @@ interface AmortizationParams {
 }
 
 interface AmortizationResult {
-  cuota: number;
+  cuota?: number;
   tabla: {
     periodo: number;
     cuota: number;
@@ -26,16 +26,27 @@ export const convertRate = (
 ): number => {
   const periodsPerYear: { [key: string]: number } = {
     anual: 1,
+    semestral: 2,
+    cuatrimestral: 3,
+    trimestral: 4,
+    bimestral: 6,
     mensual: 12,
+    quincenal: 24,
     semanal: 52,
     diario: 365,
+    horario: 8760, // 365 días * 24 horas
+    minuto: 525600, // 365 días * 24 horas * 60 minutos
+    segundo: 31536000, // 365 días * 24 horas * 60 minutos * 60 segundos
   };
 
   const fromPeriods = periodsPerYear[fromUnit] || 1;
   const toPeriods = periodsPerYear[toUnit] || 1;
 
-  const ratePerFromPeriod = rate / fromPeriods;
-  const ratePerToPeriod = ratePerFromPeriod * (fromPeriods / toPeriods);
+  // Convertir la tasa a tasa efectiva anual
+  const ratePerYear = Math.pow(1 + rate, fromPeriods) - 1;
+
+  // Convertir de tasa efectiva anual a la unidad deseada
+  const ratePerToPeriod = Math.pow(1 + ratePerYear, 1 / toPeriods) - 1;
 
   return ratePerToPeriod;
 };
@@ -89,27 +100,38 @@ const AmortizationCalculator = (
     cuotaPromedio = cuota;
   } else if (metodo === "aleman") {
     // Sistema Alemán: Amortización fija de capital
-    const amortizacionFija = P / n;
-    let saldo = P;
-    let totalCuotas = 0;
+    const amortizacionFija = P / n; // Amortización fija de capital
+    let saldo = P; // Saldo inicial
+    let sumaCuotas = 0;
 
     for (let periodo = 1; periodo <= n; periodo++) {
+      // Calcular intereses sobre el saldo pendiente actual
       const interes = saldo * iEffective;
-      const cuota = amortizacionFija + interes;
-      saldo -= amortizacionFija;
 
+      // La cuota total es la suma de la amortización fija más los intereses
+      const cuota = amortizacionFija + interes;
+
+      // Agregar la fila a la tabla
       tabla.push({
         periodo,
         cuota,
         interes,
         capitalAmortizado: amortizacionFija,
-        saldo: saldo < 0 ? 0 : saldo,
+        saldo,
       });
 
-      totalCuotas += cuota;
+      // Actualizar el saldo restando la amortización fija
+      saldo = Math.max(0, saldo - amortizacionFija);
+      sumaCuotas += cuota;
     }
 
-    cuotaPromedio = totalCuotas / n;
+    // Verificar que el último saldo sea 0 o muy cercano a 0
+    if (Math.abs(saldo) > 0.01) {
+      throw new Error("Error en el cálculo: el saldo final no es cero");
+    }
+
+    // Solo retornamos la tabla sin cuota promedio para el sistema alemán
+    return { tabla };
   } else {
     // Sistema Americano: Solo intereses y pago final del capital
     const interesPeriodico = P * iEffective;

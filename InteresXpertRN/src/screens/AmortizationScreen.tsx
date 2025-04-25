@@ -17,7 +17,20 @@ import AmortizationCalculator, {
 } from "../utils/AmortizationCalculator";
 
 // Opciones para los selectores de unidades de tiempo
-const UNIDADES_TIEMPO = ["anual", "mensual", "semanal", "diario"];
+const UNIDADES_TIEMPO = [
+  "anual",
+  "semestral",
+  "cuatrimestral",
+  "trimestral",
+  "bimestral",
+  "mensual",
+  "quincenal",
+  "semanal",
+  "diario",
+  "horario",
+  "minuto",
+  "segundo",
+];
 
 const AmortizationScreen: React.FC = () => {
   const [capital, setCapital] = useState("");
@@ -29,7 +42,7 @@ const AmortizationScreen: React.FC = () => {
   const [unidadTasa, setUnidadTasa] = useState("anual");
   const [unidadTiempo, setUnidadTiempo] = useState("anual");
   const [resultado, setResultado] = useState<{
-    cuota: number;
+    cuota?: number;
     tabla: {
       periodo: number;
       cuota: number;
@@ -108,11 +121,42 @@ const AmortizationScreen: React.FC = () => {
         ];
       } else if (metodo === "aleman") {
         const amortizacionFija = P / n;
+        const tasaPeriodica = convertRate(i, unidadTasa, unidadTiempo);
+        const primerInteres = P * tasaPeriodica;
+        const primerCuota = amortizacionFija + primerInteres;
+
         pasos = [
-          `Fórmula: Amortización fija = P / n`,
-          `Sustituyendo: Amortización fija = ${P} / ${n}`,
-          `Amortización fija = ${amortizacionFija.toFixed(2)}`,
-          `Los intereses se calculan sobre el saldo pendiente en cada período`,
+          `1. Cálculo de la Amortización Fija:`,
+          `   A = P / n`,
+          `   A = ${P} / ${n}`,
+          `   A = ${amortizacionFija.toFixed(2)}`,
+          ``,
+          `2. Cálculo de Intereses del Primer Período:`,
+          `   I₁ = Saldo × ip`,
+          `   I₁ = ${P} × ${tasaPeriodica.toFixed(6)}`,
+          `   I₁ = ${primerInteres.toFixed(2)}`,
+          ``,
+          `3. Cálculo de la Primera Cuota:`,
+          `   C₁ = A + I₁`,
+          `   C₁ = ${amortizacionFija.toFixed(2)} + ${primerInteres.toFixed(
+            2
+          )}`,
+          `   C₁ = ${primerCuota.toFixed(2)}`,
+          ``,
+          `4. Actualización del Saldo:`,
+          `   S₂ = S₁ - A`,
+          `   S₂ = ${P} - ${amortizacionFija.toFixed(2)}`,
+          `   S₂ = ${(P - amortizacionFija).toFixed(2)}`,
+          ``,
+          `5. Características del Sistema Alemán:`,
+          `   - Amortización fija: ${amortizacionFija.toFixed(
+            2
+          )} en cada período`,
+          `   - Los intereses se recalculan sobre el saldo pendiente`,
+          `   - Las cuotas son decrecientes porque los intereses disminuyen`,
+          `   - El saldo disminuye en ${amortizacionFija.toFixed(
+            2
+          )} cada período`,
         ];
       } else {
         const interesPeriodico = P * iEffective;
@@ -147,32 +191,32 @@ const AmortizationScreen: React.FC = () => {
           />
         </View>
 
-        {metodo !== "aleman" && (
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Tasa de Interés (i, %)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ej. 5"
-              keyboardType="numeric"
-              value={tasaInteres}
-              onChangeText={setTasaInteres}
-            />
-            <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Unidad de Tasa:</Text>
-              <Picker
-                selectedValue={unidadTasa}
-                style={styles.picker}
-                onValueChange={(itemValue) =>
-                  setUnidadTasa(itemValue as string)
-                }
-              >
-                {UNIDADES_TIEMPO.map((unidad) => (
-                  <Picker.Item key={unidad} label={unidad} value={unidad} />
-                ))}
-              </Picker>
-            </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Tasa de Interés (i, %)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ej. 5"
+            keyboardType="numeric"
+            value={tasaInteres}
+            onChangeText={setTasaInteres}
+          />
+          <View style={styles.pickerContainer}>
+            <Text style={styles.pickerLabel}>Unidad de Tasa:</Text>
+            <Picker
+              selectedValue={unidadTasa}
+              style={styles.picker}
+              onValueChange={(itemValue) => setUnidadTasa(itemValue as string)}
+            >
+              {UNIDADES_TIEMPO.map((unidad) => (
+                <Picker.Item
+                  key={unidad}
+                  label={unidad.charAt(0).toUpperCase() + unidad.slice(1)}
+                  value={unidad}
+                />
+              ))}
+            </Picker>
           </View>
-        )}
+        </View>
 
         {metodo !== "americano" && (
           <View style={styles.inputGroup}>
@@ -184,22 +228,24 @@ const AmortizationScreen: React.FC = () => {
               value={numPagos}
               onChangeText={setNumPagos}
             />
-            {metodo === "frances" && (
-              <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>Unidad de Tiempo:</Text>
-                <Picker
-                  selectedValue={unidadTiempo}
-                  style={styles.picker}
-                  onValueChange={(itemValue) =>
-                    setUnidadTiempo(itemValue as string)
-                  }
-                >
-                  {UNIDADES_TIEMPO.map((unidad) => (
-                    <Picker.Item key={unidad} label={unidad} value={unidad} />
-                  ))}
-                </Picker>
-              </View>
-            )}
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Unidad de Pago:</Text>
+              <Picker
+                selectedValue={unidadTiempo}
+                style={styles.picker}
+                onValueChange={(itemValue) =>
+                  setUnidadTiempo(itemValue as string)
+                }
+              >
+                {UNIDADES_TIEMPO.map((unidad) => (
+                  <Picker.Item
+                    key={unidad}
+                    label={unidad.charAt(0).toUpperCase() + unidad.slice(1)}
+                    value={unidad}
+                  />
+                ))}
+              </Picker>
+            </View>
           </View>
         )}
       </>
@@ -258,38 +304,66 @@ const AmortizationScreen: React.FC = () => {
             {resultado && (
               <View style={styles.resultContainer}>
                 <Text style={styles.resultLabel}>Resultado:</Text>
-                <View style={styles.resultBox}>
-                  <Text style={styles.resultText}>
-                    {metodo === "americano"
-                      ? "Interés Periódico:"
-                      : "Cuota Promedio:"}
-                  </Text>
-                  <Text style={styles.resultValue}>
-                    ${resultado.cuota.toFixed(2)}
-                  </Text>
-                </View>
+                {metodo !== "aleman" && (
+                  <View style={styles.resultBox}>
+                    <Text style={styles.resultText}>
+                      {metodo === "americano"
+                        ? "Interés Periódico:"
+                        : "Cuota Fija:"}
+                    </Text>
+                    <Text style={styles.resultValue}>
+                      ${resultado.cuota?.toFixed(2)}
+                    </Text>
+                  </View>
+                )}
 
                 <View style={styles.tableContainer}>
                   <Text style={styles.tableTitle}>Tabla de Amortización:</Text>
                   <View style={styles.tableHeader}>
                     <Text style={styles.tableHeaderText}>Período</Text>
-                    <Text style={styles.tableHeaderText}>Cuota</Text>
-                    <Text style={styles.tableHeaderText}>Interés</Text>
-                    <Text style={styles.tableHeaderText}>Capital</Text>
+                    {metodo === "aleman" ? (
+                      <>
+                        <Text style={styles.tableHeaderText}>Amortización</Text>
+                        <Text style={styles.tableHeaderText}>Interés</Text>
+                        <Text style={styles.tableHeaderText}>Cuota Total</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Text style={styles.tableHeaderText}>Cuota</Text>
+                        <Text style={styles.tableHeaderText}>Interés</Text>
+                        <Text style={styles.tableHeaderText}>Capital</Text>
+                      </>
+                    )}
                     <Text style={styles.tableHeaderText}>Saldo</Text>
                   </View>
                   {resultado.tabla.map((row) => (
                     <View key={row.periodo} style={styles.tableRow}>
                       <Text style={styles.tableCell}>{row.periodo}</Text>
-                      <Text style={styles.tableCell}>
-                        ${row.cuota.toFixed(2)}
-                      </Text>
-                      <Text style={styles.tableCell}>
-                        ${row.interes.toFixed(2)}
-                      </Text>
-                      <Text style={styles.tableCell}>
-                        ${row.capitalAmortizado.toFixed(2)}
-                      </Text>
+                      {metodo === "aleman" ? (
+                        <>
+                          <Text style={styles.tableCell}>
+                            ${row.capitalAmortizado.toFixed(2)}
+                          </Text>
+                          <Text style={styles.tableCell}>
+                            ${row.interes.toFixed(2)}
+                          </Text>
+                          <Text style={styles.tableCell}>
+                            ${row.cuota.toFixed(2)}
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <Text style={styles.tableCell}>
+                            ${row.cuota.toFixed(2)}
+                          </Text>
+                          <Text style={styles.tableCell}>
+                            ${row.interes.toFixed(2)}
+                          </Text>
+                          <Text style={styles.tableCell}>
+                            ${row.capitalAmortizado.toFixed(2)}
+                          </Text>
+                        </>
+                      )}
                       <Text style={styles.tableCell}>
                         ${row.saldo.toFixed(2)}
                       </Text>

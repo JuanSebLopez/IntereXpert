@@ -70,13 +70,12 @@ const DashboardScreen: React.FC = () => {
       color: "#9C27B0",
     },
     {
-<<<<<<< Updated upstream
       title: "Cálculo de Amortización",
       description: "Encuentra la amortización de un préstamo",
       screen: "AmortizationScreen",
       color: "#9C27B0",
     },
-=======
+    {
       title: "Capitalizaciones",
       description: "Simple, compuesta, continua y más",
       screen: "AdvancedCalculations",
@@ -87,8 +86,7 @@ const DashboardScreen: React.FC = () => {
       description: "Calcula la TIR de un proyecto",
       screen: "TIR",
       color: "#E91E63",
-    }
->>>>>>> Stashed changes
+    },
   ];
 
   const handleNavigation = (option: CalculatorOption) => {

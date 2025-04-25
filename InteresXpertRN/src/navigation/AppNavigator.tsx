@@ -12,12 +12,9 @@ import SimpleInterestScreen from "../screens/SimpleInterestScreen";
 import CompoundRateInterestScreen from "../screens/CompoundRateInterestScreen";
 import AnnuityScreen from "../screens/AnnuityScreen";
 import GradientScreen from "../screens/GradientScreen";
-<<<<<<< Updated upstream
 import AmortizationScreen from "../screens/AmortizationScreen";
-=======
 import AdvancedCalculationsScreen from "../screens/AdvancedCalculationsScreen";
 import TIRScreen from "../screens/TIRScreen";
->>>>>>> Stashed changes
 
 // Definición de tipos para los parámetros de navegación
 export type RootStackParamList = {
@@ -36,12 +33,9 @@ export type MainTabParamList = {
   CompoundRateInterest: undefined;
   Annuity: undefined;
   GradientScreen: undefined;
-<<<<<<< Updated upstream
   AmortizationScreen: undefined;
-=======
   AdvancedCalculations: undefined;
   TIR: undefined;
->>>>>>> Stashed changes
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -59,15 +53,12 @@ const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen name="Annuity" component={AnnuityScreen} />
       <Tab.Screen name="GradientScreen" component={GradientScreen} />
-<<<<<<< Updated upstream
       <Tab.Screen name="AmortizationScreen" component={AmortizationScreen} />
-=======
-      <Tab.Screen 
-        name="AdvancedCalculations" 
+      <Tab.Screen
+        name="AdvancedCalculations"
         component={AdvancedCalculationsScreen}
       />
       <Tab.Screen name="TIR" component={TIRScreen} />
->>>>>>> Stashed changes
     </Tab.Navigator>
   );
 };
