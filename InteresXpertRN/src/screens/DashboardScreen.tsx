@@ -7,6 +7,13 @@ import { useAuth } from '../services/AuthContext';
 
 type DashboardNavigationProp = BottomTabNavigationProp<MainTabParamList, 'Dashboard'>;
 
+interface CalculatorOption {
+  title: string;
+  description: string;
+  screen: keyof MainTabParamList;
+  color: string;
+}
+
 const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<DashboardNavigationProp>();
   const { user, logout, isBiometricAvailable, enableBiometrics, checkBiometricAvailability } = useAuth();
@@ -37,7 +44,7 @@ const DashboardScreen: React.FC = () => {
     }
   };
 
-  const calculatorOptions = [
+  const calculatorOptions: CalculatorOption[] = [
     {
       title: "Interés Simple",
       description: "Calcula el interés sobre un capital fijo",
@@ -63,12 +70,30 @@ const DashboardScreen: React.FC = () => {
       color: "#9C27B0",
     },
     {
+<<<<<<< Updated upstream
       title: "Cálculo de Amortización",
       description: "Encuentra la amortización de un préstamo",
       screen: "AmortizationScreen",
       color: "#9C27B0",
     },
+=======
+      title: "Capitalizaciones",
+      description: "Simple, compuesta, continua y más",
+      screen: "AdvancedCalculations",
+      color: "#673AB7",
+    },
+    {
+      title: "Tasa Interna de Retorno",
+      description: "Calcula la TIR de un proyecto",
+      screen: "TIR",
+      color: "#E91E63",
+    }
+>>>>>>> Stashed changes
   ];
+
+  const handleNavigation = (option: CalculatorOption) => {
+    navigation.navigate(option.screen);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -103,7 +128,7 @@ const DashboardScreen: React.FC = () => {
             <TouchableOpacity
               key={index}
               style={[styles.card, { backgroundColor: option.color }]}
-              onPress={() => navigation.navigate(option.screen as keyof MainTabParamList)}
+              onPress={() => handleNavigation(option)}
             >
               <Text style={styles.cardTitle}>{option.title}</Text>
               <Text style={styles.cardDescription}>{option.description}</Text>
