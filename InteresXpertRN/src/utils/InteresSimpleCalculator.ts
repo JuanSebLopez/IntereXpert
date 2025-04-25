@@ -56,89 +56,145 @@ const convertirUnidad = (valor: number, unidadOrigen: string, unidadDestino: str
  * @param params Parámetros para el cálculo
  * @returns Resultado del cálculo
  */
-export const calcularInteresSimple = (params: InteresSimpleParams): ResultadoInteres => {
-  const { 
-    capital, 
-    interes, 
-    tasa, 
-    unidadTasa, 
-    tiempo, 
-    unidadTiempo, 
-    unidadDeseadaTasa = unidadTasa, 
-    unidadDeseadaTiempo = unidadTiempo 
+export const calcularInteresSimple = (
+  params: InteresSimpleParams
+): ResultadoInteres => {
+  const {
+    capital,
+    interes,
+    tasa,
+    unidadTasa,
+    tiempo,
+    unidadTiempo,
+    unidadDeseadaTasa = unidadTasa,
+    unidadDeseadaTiempo = unidadTiempo,
   } = params;
 
   // Verificamos que solo falte una variable
-  const variablesFaltantes = [capital, interes, tasa, tiempo].filter(v => v === undefined).length;
+  const variablesFaltantes = [capital, interes, tasa, tiempo].filter(
+    (v) => v === undefined
+  ).length;
   if (variablesFaltantes !== 1) {
-    throw new Error(`Se requiere exactamente una variable faltante. Faltantes: ${variablesFaltantes}`);
+    throw new Error(
+      `Se requiere exactamente una variable faltante. Faltantes: ${variablesFaltantes}`
+    );
   }
 
-  // Convertimos la tasa a decimal y a la misma base temporal que el tiempo
+  // Convertimos la tasa a decimal y ajustamos unidades
   let tasaDecimal = 0;
+  let unidadReferenciaTasa = unidadTasa;
+  let unidadReferenciaTiempo = unidadTiempo;
+
+  // Caso 1: Falta la tasa, usamos unidadTiempo como referencia
+  if (tasa === undefined) {
+    unidadReferenciaTasa = unidadTiempo;
+  }
+  // Caso 2: Falta el tiempo, usamos unidadTasa como referencia
+  else if (tiempo === undefined) {
+    unidadReferenciaTiempo = unidadTasa;
+  }
+  // Caso 3: Falta capital o interés, las unidades deben coincidir
+  else if (unidadTasa !== unidadTiempo) {
+    unidadReferenciaTiempo = unidadTasa; // Aseguramos que coincidan
+  }
+
+  // Convertimos la tasa a decimal y a la unidad de referencia
   if (tasa !== undefined) {
     tasaDecimal = tasa / 100; // Convertimos de porcentaje a decimal
-    
-    // Convertimos la tasa a la misma unidad temporal que el tiempo
-    tasaDecimal = convertirUnidad(tasaDecimal, unidadTasa, unidadTiempo);
+    if (unidadTasa !== unidadReferenciaTasa) {
+      tasaDecimal = convertirUnidad(
+        tasaDecimal,
+        unidadTasa,
+        unidadReferenciaTasa
+      );
+    }
   }
 
-  // Caso 1: Calcular interés
-  if (interes === undefined && capital !== undefined && tasa !== undefined && tiempo !== undefined) {
-    // I = C * i * t
-    const interesCalculado = capital * tasaDecimal * tiempo;
+  // Convertimos el tiempo a la unidad de referencia si es necesario
+  let tiempoAjustado = tiempo;
+  if (tiempo !== undefined && unidadTiempo !== unidadReferenciaTiempo) {
+    tiempoAjustado = convertirUnidad(
+      tiempo,
+      unidadTiempo,
+      unidadReferenciaTiempo
+    );
+  }
+
+  // Caso 1: Calcular interés (I = C * i * t)
+  if (
+    interes === undefined &&
+    capital !== undefined &&
+    tasa !== undefined &&
+    tiempoAjustado !== undefined
+  ) {
+    const interesCalculado = capital * tasaDecimal * tiempoAjustado;
     return {
-      tipo: 'interes',
-      valor: interesCalculado
+      tipo: "interes",
+      valor: interesCalculado,
     };
   }
 
-  // Caso 2: Calcular capital
-  if (capital === undefined && interes !== undefined && tasa !== undefined && tiempo !== undefined) {
-    // C = I / (i * t)
-    const capitalCalculado = interes / (tasaDecimal * tiempo);
+  // Caso 2: Calcular capital (C = I / (t * i))
+  if (
+    capital === undefined &&
+    interes !== undefined &&
+    tasa !== undefined &&
+    tiempoAjustado !== undefined
+  ) {
+    const capitalCalculado = interes / (tiempoAjustado * tasaDecimal);
     return {
-      tipo: 'capital',
-      valor: capitalCalculado
+      tipo: "capital",
+      valor: capitalCalculado,
     };
   }
 
-  // Caso 3: Calcular tasa
-  if (tasa === undefined && capital !== undefined && interes !== undefined && tiempo !== undefined) {
-    // i = I / (C * t)
-    // Calculamos la tasa en la unidad temporal del tiempo
-    let tasaCalculada = interes / (capital * tiempo);
-    
+  // Caso 3: Calcular tasa (i = I / (C * t))
+  if (
+    tasa === undefined &&
+    capital !== undefined &&
+    interes !== undefined &&
+    tiempoAjustado !== undefined
+  ) {
+    let tasaCalculada = interes / (capital * tiempoAjustado);
     // Convertimos la tasa a la unidad deseada
-    tasaCalculada = convertirUnidad(tasaCalculada, unidadTiempo, unidadDeseadaTasa);
-    
+    if (unidadReferenciaTasa !== unidadDeseadaTasa) {
+      // Aseguramos que la conversión sea correcta (multiplicar o dividir según el sentido)
+      const factorOrigen = CONVERSION_FACTORS[unidadReferenciaTasa];
+      const factorDestino = CONVERSION_FACTORS[unidadDeseadaTasa];
+      tasaCalculada = tasaCalculada * (factorOrigen / factorDestino);
+    }
     // Convertimos a porcentaje
     tasaCalculada *= 100;
-    
     return {
-      tipo: 'tasa',
+      tipo: "tasa",
       valor: tasaCalculada,
-      unidad: unidadDeseadaTasa
+      unidad: unidadDeseadaTasa,
     };
   }
 
-  // Caso 4: Calcular tiempo
-  if (tiempo === undefined && capital !== undefined && interes !== undefined && tasa !== undefined) {
-    // t = I / (C * i)
-    // Calculamos el tiempo en la unidad temporal de la tasa
+  // Caso 4: Calcular tiempo (t = I / (C * i))
+  if (
+    tiempo === undefined &&
+    capital !== undefined &&
+    interes !== undefined &&
+    tasa !== undefined
+  ) {
     let tiempoCalculado = interes / (capital * tasaDecimal);
-    
     // Convertimos el tiempo a la unidad deseada
-    tiempoCalculado = convertirUnidad(tiempoCalculado, unidadTasa, unidadDeseadaTiempo);
-    
+    if (unidadReferenciaTiempo !== unidadDeseadaTiempo) {
+      // Aseguramos que la conversión sea correcta
+      const factorOrigen = CONVERSION_FACTORS[unidadReferenciaTiempo];
+      const factorDestino = CONVERSION_FACTORS[unidadDeseadaTiempo];
+      tiempoCalculado = tiempoCalculado * (factorOrigen / factorDestino);
+    }
     return {
-      tipo: 'tiempo',
+      tipo: "tiempo",
       valor: tiempoCalculado,
-      unidad: unidadDeseadaTiempo
+      unidad: unidadDeseadaTiempo,
     };
   }
 
-  throw new Error('No se pudo determinar qué variable calcular');
+  throw new Error("No se pudo determinar qué variable calcular");
 };
 
 /**
@@ -148,20 +204,20 @@ export const calcularInteresSimple = (params: InteresSimpleParams): ResultadoInt
  */
 export const formatearResultado = (resultado: ResultadoInteres): string => {
   const { tipo, valor, unidad } = resultado;
-  
+
   switch (tipo) {
-    case 'capital':
+    case "capital":
       return `Capital: $${valor.toFixed(2)}`;
-    case 'interes':
+    case "interes":
       return `Interés: $${valor.toFixed(2)}`;
-    case 'tasa':
+    case "tasa":
       return `Tasa: ${valor.toFixed(2)}% ${unidad}`;
-    case 'tiempo':
+    case "tiempo":
       return `Tiempo: ${valor.toFixed(2)} ${unidad}`;
     default:
       return `Resultado: ${valor.toFixed(2)}`;
   }
 };
 
-// Exportamos la interfaz para usar en otros archivos
-export type { InteresSimpleParams, ResultadoInteres }; 
+// Exportamos las interfaces para usar en otros archivos
+export type { InteresSimpleParams, ResultadoInteres };
