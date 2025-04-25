@@ -62,6 +62,12 @@ const DashboardScreen: React.FC = () => {
       screen: "GradientScreen",
       color: "#9C27B0",
     },
+    {
+      title: "Cálculo de Amortización",
+      description: "Encuentra la amortización de un préstamo",
+      screen: "AmortizationScreen",
+      color: "#9C27B0",
+    },
   ];
 
   return (

@@ -12,6 +12,7 @@ import SimpleInterestScreen from "../screens/SimpleInterestScreen";
 import CompoundRateInterestScreen from "../screens/CompoundRateInterestScreen";
 import AnnuityScreen from "../screens/AnnuityScreen";
 import GradientScreen from "../screens/GradientScreen";
+import AmortizationScreen from "../screens/AmortizationScreen";
 
 // Definición de tipos para los parámetros de navegación
 export type RootStackParamList = {
@@ -29,6 +30,7 @@ export type MainTabParamList = {
   CompoundRateInterest: undefined;
   Annuity: undefined;
   GradientScreen: undefined;
+  AmortizationScreen: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -46,6 +48,7 @@ const MainTabNavigator: React.FC = () => {
       />
       <Tab.Screen name="Annuity" component={AnnuityScreen} />
       <Tab.Screen name="GradientScreen" component={GradientScreen} />
+      <Tab.Screen name="AmortizationScreen" component={AmortizationScreen} />
     </Tab.Navigator>
   );
 };
