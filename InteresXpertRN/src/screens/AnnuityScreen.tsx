@@ -1,195 +1,317 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Switch
-} from 'react-native';
+} from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import {
+  calcularAnualidad,
+  AnnuityParams,
+  AnnuityResult,
+} from "../utils/AnnuityCalculator";
 
-enum AnnuityType {
-  ORDINARY = 'ordinary', // Pagos al final del periodo
-  DUE = 'due', // Pagos al inicio del periodo
-}
-
-enum CalculationType {
-  PAYMENT = 'payment', // Calcular pago periódico
-  FUTURE_VALUE = 'future_value', // Calcular valor futuro
-  PRESENT_VALUE = 'present_value', // Calcular valor presente
-}
+// Definimos un tipo para las unidades
+type Unidad =
+  | "anual"
+  | "semestral"
+  | "cuatrimestral"
+  | "trimestral"
+  | "bimestral"
+  | "mensual"
+  | "semanal"
+  | "diario"
+  | "horas"
+  | "minutos"
+  | "segundos";
+const UNIDADES: Unidad[] = [
+  "anual",
+  "semestral",
+  "cuatrimestral",
+  "trimestral",
+  "bimestral",
+  "mensual",
+  "semanal",
+  "diario",
+  "horas",
+  "minutos",
+  "segundos",
+];
 
 const AnnuityScreen: React.FC = () => {
-  const [payment, setPayment] = useState('');
-  const [presentValue, setPresentValue] = useState('');
-  const [futureValue, setFutureValue] = useState('');
-  const [rate, setRate] = useState('');
-  const [periods, setPeriods] = useState('');
-  const [annuityType, setAnnuityType] = useState<AnnuityType>(AnnuityType.ORDINARY);
-  const [calculationType, setCalculationType] = useState<CalculationType>(CalculationType.PAYMENT);
-  const [result, setResult] = useState<number | null>(null);
+  const [variableACalcular, setVariableACalcular] = useState<
+    "valorFuturo" | "valorActual" | "tasa" | "tiempo"
+  >("valorFuturo");
+  const [valorFuturo, setValorFuturo] = useState("");
+  const [valorActual, setValorActual] = useState("");
+  const [renta, setRenta] = useState("");
+  const [tasa, setTasa] = useState("");
+  const [tiempo, setTiempo] = useState("");
+  const [unitTasa, setUnitTasa] = useState<Unidad>("anual");
+  const [unitTiempo, setUnitTiempo] = useState<Unidad>("anual");
+  const [desiredUnitTasa, setDesiredUnitTasa] = useState<Unidad>("anual");
+  const [desiredUnitTiempo, setDesiredUnitTiempo] = useState<Unidad>("anual");
+  const [result, setResult] = useState<AnnuityResult | null>(null);
 
-  const toggleAnnuityType = () => {
-    setAnnuityType(
-      annuityType === AnnuityType.ORDINARY ? AnnuityType.DUE : AnnuityType.ORDINARY
-    );
-  };
-
-  const selectCalculationType = (type: CalculationType) => {
-    setCalculationType(type);
-    clearForm();
+  const clearForm = () => {
+    setValorFuturo("");
+    setValorActual("");
+    setRenta("");
+    setTasa("");
+    setTiempo("");
+    setUnitTasa("anual");
+    setUnitTiempo("anual");
+    setDesiredUnitTasa("anual");
+    setDesiredUnitTiempo("anual");
+    setResult(null);
   };
 
   const calculateAnnuity = () => {
     try {
-      const r = parseFloat(rate) / 100; // Convertir tasa a decimal
-      const n = parseFloat(periods);
-      
-      if (r <= 0 || n <= 0) {
-        Alert.alert('Error', 'La tasa de interés y el número de periodos deben ser mayores que cero');
+      const params: Partial<AnnuityParams> = {
+        unidadTasa: unitTasa,
+        unidadTiempo: unitTiempo,
+        unidadDeseadaTasa:
+          variableACalcular === "tasa" ? desiredUnitTasa : undefined,
+        unidadDeseadaTiempo:
+          variableACalcular === "tiempo" ? desiredUnitTiempo : undefined,
+      };
+
+      switch (variableACalcular) {
+        case "valorFuturo":
+          if (!renta || !tasa || !tiempo) {
+            Alert.alert(
+              "Error",
+              "Por favor completa todos los campos necesarios"
+            );
+            return;
+          }
+          params.renta = parseFloat(renta);
+          params.tasa = parseFloat(tasa);
+          params.tiempo = parseFloat(tiempo);
+          break;
+
+        case "valorActual":
+          if (!renta || !tasa || !tiempo) {
+            Alert.alert(
+              "Error",
+              "Por favor completa todos los campos necesarios"
+            );
+            return;
+          }
+          params.renta = parseFloat(renta);
+          params.tasa = parseFloat(tasa);
+          params.tiempo = parseFloat(tiempo);
+          break;
+
+        case "tasa":
+          if (!valorFuturo || !valorActual || !tiempo) {
+            Alert.alert(
+              "Error",
+              "Por favor completa todos los campos necesarios"
+            );
+            return;
+          }
+          params.valorFuturo = parseFloat(valorFuturo);
+          params.valorActual = parseFloat(valorActual);
+          params.tiempo = parseFloat(tiempo);
+          break;
+
+        case "tiempo":
+          if (!valorFuturo || !valorActual || !tasa) {
+            Alert.alert(
+              "Error",
+              "Por favor completa todos los campos necesarios"
+            );
+            return;
+          }
+          params.valorFuturo = parseFloat(valorFuturo);
+          params.valorActual = parseFloat(valorActual);
+          params.tasa = parseFloat(tasa);
+          break;
+      }
+
+      // Validar que los valores sean mayores que cero
+      const valores = [
+        params.valorFuturo,
+        params.valorActual,
+        params.renta,
+        params.tasa,
+        params.tiempo,
+      ].filter((v) => v !== undefined);
+      if (valores.some((v) => v! <= 0)) {
+        Alert.alert("Error", "Todos los valores deben ser mayores que cero");
         return;
       }
 
-      // Factor para anualidad vencida o anticipada
-      const dueFactor = annuityType === AnnuityType.DUE ? (1 + r) : 1;
-      
-      switch (calculationType) {
-        case CalculationType.PAYMENT:
-          if (!presentValue && !futureValue) {
-            Alert.alert('Error', 'Debes proporcionar al menos un valor presente o futuro');
-            return;
-          }
-          
-          let paymentResult = 0;
-          if (presentValue) {
-            const pv = parseFloat(presentValue);
-            // Fórmula para calcular el pago periódico usando valor presente
-            paymentResult = (pv * r) / (dueFactor * (1 - Math.pow(1 + r, -n)));
-          } else if (futureValue) {
-            const fv = parseFloat(futureValue);
-            // Fórmula para calcular el pago periódico usando valor futuro
-            paymentResult = (fv * r) / (dueFactor * (Math.pow(1 + r, n) - 1));
-          }
-          setResult(paymentResult);
-          break;
-          
-        case CalculationType.FUTURE_VALUE:
-          if (!payment || !periods || !rate) {
-            Alert.alert('Error', 'Por favor, completa todos los campos requeridos');
-            return;
-          }
-          
-          const paymentAmount = parseFloat(payment);
-          // Fórmula para calcular el valor futuro
-          const fv = (paymentAmount * dueFactor * (Math.pow(1 + r, n) - 1)) / r;
-          setResult(fv);
-          break;
-          
-        case CalculationType.PRESENT_VALUE:
-          if (!payment || !periods || !rate) {
-            Alert.alert('Error', 'Por favor, completa todos los campos requeridos');
-            return;
-          }
-          
-          const paymentValue = parseFloat(payment);
-          // Fórmula para calcular el valor presente
-          const pv = (paymentValue * dueFactor * (1 - Math.pow(1 + r, -n))) / r;
-          setResult(pv);
-          break;
+      // Validar que VF > VA cuando se calcula tasa o tiempo
+      if (
+        (variableACalcular === "tasa" || variableACalcular === "tiempo") &&
+        params.valorFuturo! <= params.valorActual!
+      ) {
+        Alert.alert(
+          "Error",
+          "El Valor Futuro debe ser mayor que el Valor Actual"
+        );
+        return;
       }
+
+      const resultado = calcularAnualidad(
+        params as AnnuityParams,
+        variableACalcular
+      );
+      setResult(resultado);
     } catch (error) {
-      Alert.alert('Error', 'Hubo un error en el cálculo. Por favor, verifica los valores.');
-      console.error(error);
+      Alert.alert(
+        "Error",
+        error instanceof Error
+          ? error.message
+          : "Ha ocurrido un error en el cálculo"
+      );
     }
   };
 
-  const clearForm = () => {
-    setPayment('');
-    setPresentValue('');
-    setFutureValue('');
-    setRate('');
-    setPeriods('');
-    setResult(null);
-  };
-
-  const renderInputFields = () => {
-    switch (calculationType) {
-      case CalculationType.PAYMENT:
-        return (
+  const renderizarCampos = () => {
+    return (
+      <>
+        {(variableACalcular === "tasa" || variableACalcular === "tiempo") && (
           <>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Valor Presente (opcional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ej. 10000"
-                keyboardType="numeric"
-                value={presentValue}
-                onChangeText={setPresentValue}
-              />
-            </View>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Valor Futuro (opcional)</Text>
+              <Text style={styles.label}>Valor Futuro (VF)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ej. 15000"
                 keyboardType="numeric"
-                value={futureValue}
-                onChangeText={setFutureValue}
+                value={valorFuturo}
+                onChangeText={setValorFuturo}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Valor Actual (VA)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ej. 10000"
+                keyboardType="numeric"
+                value={valorActual}
+                onChangeText={setValorActual}
               />
             </View>
           </>
-        );
-        
-      case CalculationType.FUTURE_VALUE:
-        return (
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Pago Periódico</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ej. 500"
-              keyboardType="numeric"
-              value={payment}
-              onChangeText={setPayment}
-            />
-          </View>
-        );
-        
-      case CalculationType.PRESENT_VALUE:
-        return (
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Pago Periódico</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ej. 500"
-              keyboardType="numeric"
-              value={payment}
-              onChangeText={setPayment}
-            />
-          </View>
-        );
-        
-      default:
-        return null;
-    }
-  };
+        )}
 
-  const getResultLabel = () => {
-    switch (calculationType) {
-      case CalculationType.PAYMENT:
-        return 'Pago Periódico:';
-      case CalculationType.FUTURE_VALUE:
-        return 'Valor Futuro:';
-      case CalculationType.PRESENT_VALUE:
-        return 'Valor Presente:';
-      default:
-        return 'Resultado:';
-    }
+        {(variableACalcular === "valorFuturo" ||
+          variableACalcular === "valorActual") && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Renta (A)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. 500"
+              keyboardType="numeric"
+              value={renta}
+              onChangeText={setRenta}
+            />
+          </View>
+        )}
+
+        {(variableACalcular === "valorFuturo" ||
+          variableACalcular === "valorActual" ||
+          variableACalcular === "tiempo") && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tasa de Interés (%)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. 5"
+              keyboardType="numeric"
+              value={tasa}
+              onChangeText={setTasa}
+            />
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Unidad de Tasa:</Text>
+              <Picker
+                selectedValue={unitTasa}
+                style={styles.picker}
+                onValueChange={(itemValue: Unidad) => setUnitTasa(itemValue)}
+              >
+                {UNIDADES.map((unidad) => (
+                  <Picker.Item key={unidad} label={unidad} value={unidad} />
+                ))}
+              </Picker>
+            </View>
+
+            {variableACalcular === "tiempo" && (
+              <View style={styles.pickerContainer}>
+                <Text style={styles.pickerLabel}>Unidad Deseada de Tasa:</Text>
+                <Picker
+                  selectedValue={desiredUnitTasa}
+                  style={styles.picker}
+                  onValueChange={(itemValue: Unidad) =>
+                    setDesiredUnitTasa(itemValue)
+                  }
+                >
+                  {UNIDADES.map((unidad) => (
+                    <Picker.Item key={unidad} label={unidad} value={unidad} />
+                  ))}
+                </Picker>
+              </View>
+            )}
+          </View>
+        )}
+
+        {(variableACalcular === "valorFuturo" ||
+          variableACalcular === "valorActual" ||
+          variableACalcular === "tasa") && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tiempo (n)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. 12"
+              keyboardType="numeric"
+              value={tiempo}
+              onChangeText={setTiempo}
+            />
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Unidad de Tiempo:</Text>
+              <Picker
+                selectedValue={unitTiempo}
+                style={styles.picker}
+                onValueChange={(itemValue: Unidad) => setUnitTiempo(itemValue)}
+              >
+                {UNIDADES.map((unidad) => (
+                  <Picker.Item key={unidad} label={unidad} value={unidad} />
+                ))}
+              </Picker>
+            </View>
+
+            {variableACalcular === "tasa" && (
+              <View style={styles.pickerContainer}>
+                <Text style={styles.pickerLabel}>
+                  Unidad Deseada de Tiempo:
+                </Text>
+                <Picker
+                  selectedValue={desiredUnitTiempo}
+                  style={styles.picker}
+                  onValueChange={(itemValue: Unidad) =>
+                    setDesiredUnitTiempo(itemValue)
+                  }
+                >
+                  {UNIDADES.map((unidad) => (
+                    <Picker.Item key={unidad} label={unidad} value={unidad} />
+                  ))}
+                </Picker>
+              </View>
+            )}
+          </View>
+        )}
+      </>
+    );
   };
 
   return (
@@ -201,131 +323,109 @@ const AnnuityScreen: React.FC = () => {
         <ScrollView style={styles.scrollView}>
           <View style={styles.header}>
             <Text style={styles.title}>Calculadora de Anualidades</Text>
-            <Text style={styles.subtitle}>Calcula pagos o recibos periódicos</Text>
+            <Text style={styles.subtitle}>
+              Calcula anualidades ordinarias simples
+            </Text>
           </View>
-          
+
           <View style={styles.formContainer}>
-            <View style={styles.calculationTypeContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.calculationTypeButton,
-                  calculationType === CalculationType.PAYMENT && styles.activeCalculationType
-                ]}
-                onPress={() => selectCalculationType(CalculationType.PAYMENT)}
-              >
-                <Text 
-                  style={[
-                    styles.calculationTypeText,
-                    calculationType === CalculationType.PAYMENT && styles.activeCalculationTypeText
-                  ]}
-                >
-                  Calcular Pago
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[
-                  styles.calculationTypeButton,
-                  calculationType === CalculationType.FUTURE_VALUE && styles.activeCalculationType
-                ]}
-                onPress={() => selectCalculationType(CalculationType.FUTURE_VALUE)}
-              >
-                <Text 
-                  style={[
-                    styles.calculationTypeText,
-                    calculationType === CalculationType.FUTURE_VALUE && styles.activeCalculationTypeText
-                  ]}
-                >
-                  Calcular Valor Futuro
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[
-                  styles.calculationTypeButton,
-                  calculationType === CalculationType.PRESENT_VALUE && styles.activeCalculationType
-                ]}
-                onPress={() => selectCalculationType(CalculationType.PRESENT_VALUE)}
-              >
-                <Text 
-                  style={[
-                    styles.calculationTypeText,
-                    calculationType === CalculationType.PRESENT_VALUE && styles.activeCalculationTypeText
-                  ]}
-                >
-                  Calcular Valor Presente
-                </Text>
-              </TouchableOpacity>
+            <View style={styles.variableSelector}>
+              <Text style={styles.selectorLabel}>¿Qué deseas calcular?</Text>
+              <View style={styles.selectorButtonsContainer}>
+                {["valorFuturo", "valorActual", "tasa", "tiempo"].map(
+                  (variable) => (
+                    <TouchableOpacity
+                      key={variable}
+                      style={[
+                        styles.selectorButton,
+                        variableACalcular === variable &&
+                          styles.activeSelectorButton,
+                      ]}
+                      onPress={() => {
+                        setVariableACalcular(
+                          variable as
+                            | "valorFuturo"
+                            | "valorActual"
+                            | "tasa"
+                            | "tiempo"
+                        );
+                        clearForm();
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.selectorButtonText,
+                          variableACalcular === variable &&
+                            styles.activeSelectorButtonText,
+                        ]}
+                      >
+                        {variable === "valorFuturo"
+                          ? "Valor Futuro"
+                          : variable === "valorActual"
+                          ? "Valor Actual"
+                          : variable.charAt(0).toUpperCase() +
+                            variable.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                )}
+              </View>
             </View>
-            
-            {renderInputFields()}
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Tasa de Interés Anual (%)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ej. 5"
-                keyboardType="numeric"
-                value={rate}
-                onChangeText={setRate}
-              />
-            </View>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Número de Periodos</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ej. 12"
-                keyboardType="numeric"
-                value={periods}
-                onChangeText={setPeriods}
-              />
-            </View>
-            
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>
-                Anualidad {annuityType === AnnuityType.ORDINARY ? 'Vencida' : 'Anticipada'}
-              </Text>
-              <Switch
-                trackColor={{ false: '#767577', true: '#3F51B5' }}
-                thumbColor={annuityType === AnnuityType.DUE ? '#fff' : '#f4f3f4'}
-                ios_backgroundColor="#3e3e3e"
-                onValueChange={toggleAnnuityType}
-                value={annuityType === AnnuityType.DUE}
-              />
-            </View>
-            
+
+            {renderizarCampos()}
+
             <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={styles.calculateButton} 
+              <TouchableOpacity
+                style={styles.calculateButton}
                 onPress={calculateAnnuity}
               >
                 <Text style={styles.buttonText}>Calcular</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.clearButton} 
-                onPress={clearForm}
-              >
+
+              <TouchableOpacity style={styles.clearButton} onPress={clearForm}>
                 <Text style={styles.clearButtonText}>Limpiar</Text>
               </TouchableOpacity>
             </View>
-            
-            {result !== null && (
+
+            {result && (
               <View style={styles.resultContainer}>
                 <Text style={styles.resultLabel}>Resultado:</Text>
                 <View style={styles.resultBox}>
                   <View style={styles.resultRow}>
-                    <Text style={styles.resultText}>{getResultLabel()}</Text>
-                    <Text style={styles.resultValue}>${result.toFixed(2)}</Text>
+                    <Text style={styles.resultText}>
+                      {result.tipo === "valorFuturo"
+                        ? "Valor Futuro"
+                        : result.tipo === "valorActual"
+                        ? "Valor Actual"
+                        : result.tipo.charAt(0).toUpperCase() +
+                          result.tipo.slice(1)}
+                      :
+                    </Text>
+                    <Text style={styles.resultValue}>
+                      {result.tipo === "tasa"
+                        ? `${result.valor.toFixed(2)}%`
+                        : result.tipo === "tiempo"
+                        ? `${result.valor.toFixed(2)}`
+                        : `$${result.valor.toFixed(2)}`}
+                      {result.unidad ? ` ${result.unidad.toUpperCase()}` : ""}
+                    </Text>
                   </View>
                 </View>
-                
+
                 <View style={styles.formulaContainer}>
-                  <Text style={styles.formulaTitle}>Nota Importante:</Text>
+                  <Text style={styles.formulaTitle}>Fórmula Aplicada:</Text>
+                  <Text style={styles.formula}>
+                    {result.tipo === "valorFuturo"
+                      ? "VF = A × [(1 + i)^n - 1] / i"
+                      : result.tipo === "valorActual"
+                      ? "VA = A × [1 - (1 + i)^(-n)] / i"
+                      : result.tipo === "tasa"
+                      ? "i = (VF / VA)^(1/n) - 1"
+                      : "n = ln(VF / VA) / ln(1 + i)"}
+                  </Text>
                   <Text style={styles.formulaWhere}>
-                    Las anualidades vencidas tienen pagos al final de cada periodo.
-                    Las anualidades anticipadas tienen pagos al inicio de cada periodo.
+                    Donde: VF = Valor Futuro, VA = Valor Actual, A = Renta, i =
+                    Tasa de interés (decimal), n = Tiempo
                   </Text>
                 </View>
               </View>
@@ -340,7 +440,7 @@ const AnnuityScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -350,44 +450,55 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    backgroundColor: '#3F51B5',
+    backgroundColor: "#3F51B5",
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   subtitle: {
     fontSize: 14,
-    color: '#E1E1F5',
+    color: "#E1E1F5",
     marginTop: 5,
   },
   formContainer: {
     padding: 20,
   },
-  calculationTypeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  variableSelector: {
     marginBottom: 20,
   },
-  calculationTypeButton: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 10,
+  modoSelector: {
+    marginBottom: 20,
+  },
+  selectorLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
     marginBottom: 10,
-    width: '100%',
+    color: "#333",
   },
-  calculationTypeText: {
-    textAlign: 'center',
-    color: '#555',
-    fontWeight: '500',
+  selectorButtonsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
-  activeCalculationType: {
-    backgroundColor: '#3F51B5',
+  selectorButton: {
+    width: "48%",
+    backgroundColor: "#f0f0f0",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignItems: "center",
   },
-  activeCalculationTypeText: {
-    color: '#fff',
+  selectorButtonText: {
+    color: "#333",
+  },
+  activeSelectorButton: {
+    backgroundColor: "#3F51B5",
+  },
+  activeSelectorButtonText: {
+    color: "#fff",
+    fontWeight: "600",
   },
   inputGroup: {
     marginBottom: 15,
@@ -395,119 +506,119 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     marginBottom: 5,
-    color: '#333',
+    color: "#333",
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     fontSize: 16,
   },
-  switchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    backgroundColor: '#fff',
-    padding: 12,
+  pickerContainer: {
+    marginTop: 8,
+  },
+  pickerLabel: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 2,
+  },
+  picker: {
+    backgroundColor: "#fff",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  switchLabel: {
+    borderColor: "#ddd",
     fontSize: 16,
-    color: '#333',
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 10,
     marginBottom: 20,
   },
   calculateButton: {
-    backgroundColor: '#3F51B5',
+    backgroundColor: "#3F51B5",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
     marginRight: 8,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   clearButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     flex: 1,
     marginLeft: 8,
   },
   clearButtonText: {
-    color: '#555',
+    color: "#555",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   resultContainer: {
     marginTop: 10,
   },
   resultLabel: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    color: '#333',
+    color: "#333",
   },
   resultBox: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 15,
     borderWidth: 1,
-    borderColor: '#3F51B5',
+    borderColor: "#3F51B5",
   },
   resultRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   resultText: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
   resultValue: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#3F51B5',
+    fontWeight: "bold",
+    color: "#3F51B5",
   },
   formulaContainer: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: '#E8EAF6',
+    backgroundColor: "#E8EAF6",
     borderRadius: 8,
   },
   formulaTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
-    color: '#333',
+    color: "#333",
   },
   formula: {
     fontSize: 20,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: 8,
-    color: '#3F51B5',
-    fontWeight: 'bold',
+    color: "#3F51B5",
+    fontWeight: "bold",
   },
   formulaWhere: {
     fontSize: 14,
-    color: '#555',
+    color: "#555",
     lineHeight: 20,
   },
 });
 
-export default AnnuityScreen; 
+export default AnnuityScreen;
