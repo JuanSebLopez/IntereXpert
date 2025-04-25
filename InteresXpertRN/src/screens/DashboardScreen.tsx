@@ -19,7 +19,7 @@ const DashboardScreen: React.FC = () => {
     {
       title: "Interés Compuesto",
       description: "Calcula el interés que se suma al capital",
-      screen: "CompoundRateInterestScreen",
+      screen: "CompoundRateInterest",
       color: "#7B1FA2",
     },
     {

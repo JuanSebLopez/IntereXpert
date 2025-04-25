@@ -19,7 +19,6 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   Main: undefined;
-  Gradient: undefined;
 };
 
 export type MainTabParamList = {
