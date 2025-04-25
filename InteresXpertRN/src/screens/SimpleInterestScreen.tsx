@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -10,183 +10,251 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Switch
+  Modal,
+  Pressable
 } from 'react-native';
-import UnitSelector, { TimeUnit } from '../components/UnitSelector';
-import {
-  calculateInterest,
-  calculatePrincipal,
-  calculateRate,
-  calculateTime
-} from '../utils/timeUnitConversion';
+import { Picker } from '@react-native-picker/picker';
+import { calcularInteresSimple, formatearResultado, InteresSimpleParams, ResultadoInteres } from '../utils/InteresSimpleCalculator';
 
-enum CalculationType {
-  INTEREST = 'interest',
-  PRINCIPAL = 'principal',
-  RATE = 'rate',
-  TIME = 'time'
-}
+// Opciones para los selectores de unidades de tiempo
+const UNIDADES_TIEMPO = [
+  "anual", 
+  "semestral", 
+  "cuatrimestral", 
+  "trimestral", 
+  "bimestral", 
+  "mensual", 
+  "semanal", 
+  "diario"
+];
 
 const SimpleInterestScreen: React.FC = () => {
-  // Inputs
-  const [principal, setPrincipal] = useState('');
+  // Variables para el formulario básico
+  const [capital, setCapital] = useState('');
   const [rate, setRate] = useState('');
   const [time, setTime] = useState('');
-  const [interest, setInterest] = useState('');
-
-  // Units
-  const [timeUnit, setTimeUnit] = useState<TimeUnit>('anual');
-  const [rateUnit, setRateUnit] = useState<TimeUnit>('anual');
-  const [outputRateUnit, setOutputRateUnit] = useState<TimeUnit>('anual');
-  const [outputTimeUnit, setOutputTimeUnit] = useState<TimeUnit>('anual');
-
-  // Results
   const [result, setResult] = useState<number | null>(null);
-  const [calculationType, setCalculationType] = useState<CalculationType>(CalculationType.INTEREST);
   const [totalAmount, setTotalAmount] = useState<number | null>(null);
 
-  // Comprobamos qué variable está siendo calculada
-  useEffect(() => {
-    // Si solo hay una variable sin valor, esa es la que se calculará
-    // Si hay más de una, decidimos por prioridad: interés > capital > tasa > tiempo
-    let emptyFields = 0;
-    let type = CalculationType.INTEREST;
+  // Variables para el modo avanzado
+  const [modoAvanzado, setModoAvanzado] = useState(false);
+  const [variableACalcular, setVariableACalcular] = useState<'interes' | 'capital' | 'tasa' | 'tiempo'>('interes');
+  const [interes, setInteres] = useState('');
+  const [capitalAvanzado, setCapitalAvanzado] = useState('');
+  const [tasaAvanzada, setTasaAvanzada] = useState('');
+  const [tiempoAvanzado, setTiempoAvanzado] = useState('');
+  const [unidadTasa, setUnidadTasa] = useState('anual');
+  const [unidadTiempo, setUnidadTiempo] = useState('anual');
+  const [unidadDeseadaTasa, setUnidadDeseadaTasa] = useState('anual');
+  const [unidadDeseadaTiempo, setUnidadDeseadaTiempo] = useState('anual');
+  const [resultadoAvanzado, setResultadoAvanzado] = useState<ResultadoInteres | null>(null);
 
-    if (!interest) {
-      emptyFields++;
-      type = CalculationType.INTEREST;
-    }
-    if (!principal) {
-      emptyFields++;
-      type = CalculationType.PRINCIPAL;
-    }
-    if (!rate) {
-      emptyFields++;
-      type = CalculationType.RATE;
-    }
-    if (!time) {
-      emptyFields++;
-      type = CalculationType.TIME;
-    }
-
-    if (emptyFields === 1) {
-      setCalculationType(type);
-    } else {
-      // Si hay más o menos de un campo vacío, reiniciamos el resultado
-      setResult(null);
-      setTotalAmount(null);
-    }
-  }, [principal, rate, time, interest]);
-
-  const performCalculation = () => {
-    // Verificar que haya exactamente una variable omitida
-    const filledFields = [principal, rate, time, interest].filter(Boolean).length;
-    if (filledFields !== 3) {
-      Alert.alert('Error', 'Debes ingresar exactamente 3 de los 4 valores (Capital, Tasa, Tiempo, Interés)');
+  // Cálculo simple de interés
+  const calculateInterest = () => {
+    if (!capital || !rate || !time) {
       return;
     }
 
-    try {
-      switch (calculationType) {
-        case CalculationType.INTEREST:
-          calculateInterestValue();
-          break;
-        case CalculationType.PRINCIPAL:
-          calculatePrincipalValue();
-          break;
-        case CalculationType.RATE:
-          calculateRateValue();
-          break;
-        case CalculationType.TIME:
-          calculateTimeValue();
-          break;
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Hubo un error en el cálculo. Verifica tus valores.');
-      console.error(error);
-    }
-  };
-
-  const calculateInterestValue = () => {
-    const p = parseFloat(principal);
+    const p = parseFloat(capital);
     const r = parseFloat(rate) / 100; // Convertir a decimal
     const t = parseFloat(time);
     
-    // Calculamos el interés con las unidades seleccionadas
-    const interestValue = calculateInterest(p, r, t, rateUnit, timeUnit);
-    
-    setResult(interestValue);
-    setTotalAmount(p + interestValue);
+    // Fórmula de interés simple: I = P * r * t
+    const interest = p * r * t;
+    setResult(interest);
+    setTotalAmount(p + interest);
   };
 
-  const calculatePrincipalValue = () => {
-    const i = parseFloat(interest);
-    const r = parseFloat(rate) / 100; // Convertir a decimal
-    const t = parseFloat(time);
-    
-    // Calculamos el principal con las unidades seleccionadas
-    const principalValue = calculatePrincipal(i, r, t, rateUnit, timeUnit);
-    
-    setResult(principalValue);
-    setTotalAmount(principalValue + i);
-  };
-
-  const calculateRateValue = () => {
-    const p = parseFloat(principal);
-    const t = parseFloat(time);
-    const i = parseFloat(interest);
-    
-    // Para calcular la tasa, usamos la unidad de tiempo como referencia
-    // y luego convertimos al tipo de salida deseado
-    const rateValue = calculateRate(p, i, t, timeUnit, outputRateUnit);
-    
-    // Convertimos a porcentaje para mostrar
-    setResult(rateValue * 100);
-  };
-
-  const calculateTimeValue = () => {
-    const p = parseFloat(principal);
-    const r = parseFloat(rate) / 100; // Convertir a decimal
-    const i = parseFloat(interest);
-    
-    // Para calcular el tiempo, usamos la unidad de tasa como referencia
-    // y luego convertimos al tipo de salida deseado
-    const timeValue = calculateTime(p, i, r, rateUnit, outputTimeUnit);
-    
-    setResult(timeValue);
-  };
-
+  // Limpieza del formulario simple
   const clearForm = () => {
-    setPrincipal('');
+    setCapital('');
     setRate('');
     setTime('');
-    setInterest('');
     setResult(null);
     setTotalAmount(null);
   };
 
-  const getResultLabel = () => {
-    switch (calculationType) {
-      case CalculationType.INTEREST:
-        return 'Interés:';
-      case CalculationType.PRINCIPAL:
-        return 'Capital Inicial:';
-      case CalculationType.RATE:
-        return `Tasa (${outputRateUnit}):`;
-      case CalculationType.TIME:
-        return `Tiempo (${outputTimeUnit}):`;
-      default:
-        return 'Resultado:';
+  // Limpieza del formulario avanzado
+  const clearFormAvanzado = () => {
+    setInteres('');
+    setCapitalAvanzado('');
+    setTasaAvanzada('');
+    setTiempoAvanzado('');
+    setResultadoAvanzado(null);
+  };
+
+  // Cálculo avanzado de interés simple
+  const calcularAvanzado = () => {
+    try {
+      const params: Partial<InteresSimpleParams> = {
+        unidadTasa,
+        unidadTiempo,
+        unidadDeseadaTasa,
+        unidadDeseadaTiempo
+      };
+
+      // Preparamos los parámetros según la variable a calcular
+      switch (variableACalcular) {
+        case 'interes':
+          if (!capitalAvanzado || !tasaAvanzada || !tiempoAvanzado) {
+            Alert.alert('Error', 'Por favor completa todos los campos necesarios');
+            return;
+          }
+          params.capital = parseFloat(capitalAvanzado);
+          params.tasa = parseFloat(tasaAvanzada);
+          params.tiempo = parseFloat(tiempoAvanzado);
+          break;
+        
+        case 'capital':
+          if (!interes || !tasaAvanzada || !tiempoAvanzado) {
+            Alert.alert('Error', 'Por favor completa todos los campos necesarios');
+            return;
+          }
+          params.interes = parseFloat(interes);
+          params.tasa = parseFloat(tasaAvanzada);
+          params.tiempo = parseFloat(tiempoAvanzado);
+          break;
+        
+        case 'tasa':
+          if (!interes || !capitalAvanzado || !tiempoAvanzado) {
+            Alert.alert('Error', 'Por favor completa todos los campos necesarios');
+            return;
+          }
+          params.interes = parseFloat(interes);
+          params.capital = parseFloat(capitalAvanzado);
+          params.tiempo = parseFloat(tiempoAvanzado);
+          break;
+        
+        case 'tiempo':
+          if (!interes || !capitalAvanzado || !tasaAvanzada) {
+            Alert.alert('Error', 'Por favor completa todos los campos necesarios');
+            return;
+          }
+          params.interes = parseFloat(interes);
+          params.capital = parseFloat(capitalAvanzado);
+          params.tasa = parseFloat(tasaAvanzada);
+          break;
+      }
+
+      // Realizamos el cálculo
+      const resultado = calcularInteresSimple(params as InteresSimpleParams);
+      setResultadoAvanzado(resultado);
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Ha ocurrido un error en el cálculo');
     }
   };
 
-  const getResultUnit = () => {
-    switch (calculationType) {
-      case CalculationType.RATE:
-        return '%';
-      default:
-        return '';
-    }
+  // Renderiza los campos según la variable a calcular
+  const renderizarCamposAvanzados = () => {
+    return (
+      <>
+        {variableACalcular !== 'interes' && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Interés</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. 200"
+              keyboardType="numeric"
+              value={interes}
+              onChangeText={setInteres}
+            />
+          </View>
+        )}
+        
+        {variableACalcular !== 'capital' && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Capital Inicial</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. 1000"
+              keyboardType="numeric"
+              value={capitalAvanzado}
+              onChangeText={setCapitalAvanzado}
+            />
+          </View>
+        )}
+        
+        {variableACalcular !== 'tasa' && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tasa de Interés (%)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. 5"
+              keyboardType="numeric"
+              value={tasaAvanzada}
+              onChangeText={setTasaAvanzada}
+            />
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Unidad de Tasa:</Text>
+              <Picker
+                selectedValue={unidadTasa}
+                style={styles.picker}
+                onValueChange={(itemValue) => setUnidadTasa(itemValue as string)}
+              >
+                {UNIDADES_TIEMPO.map((unidad) => (
+                  <Picker.Item key={unidad} label={unidad} value={unidad} />
+                ))}
+              </Picker>
+            </View>
+            
+            {variableACalcular === 'tiempo' && (
+              <View style={styles.pickerContainer}>
+                <Text style={styles.pickerLabel}>Unidad Deseada de Tasa:</Text>
+                <Picker
+                  selectedValue={unidadDeseadaTasa}
+                  style={styles.picker}
+                  onValueChange={(itemValue) => setUnidadDeseadaTasa(itemValue as string)}
+                >
+                  {UNIDADES_TIEMPO.map((unidad) => (
+                    <Picker.Item key={unidad} label={unidad} value={unidad} />
+                  ))}
+                </Picker>
+              </View>
+            )}
+          </View>
+        )}
+        
+        {variableACalcular !== 'tiempo' && (
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Tiempo</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. 2"
+              keyboardType="numeric"
+              value={tiempoAvanzado}
+              onChangeText={setTiempoAvanzado}
+            />
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>Unidad de Tiempo:</Text>
+              <Picker
+                selectedValue={unidadTiempo}
+                style={styles.picker}
+                onValueChange={(itemValue) => setUnidadTiempo(itemValue as string)}
+              >
+                {UNIDADES_TIEMPO.map((unidad) => (
+                  <Picker.Item key={unidad} label={unidad} value={unidad} />
+                ))}
+              </Picker>
+            </View>
+            
+            {variableACalcular === 'tasa' && (
+              <View style={styles.pickerContainer}>
+                <Text style={styles.pickerLabel}>Unidad Deseada de Tiempo:</Text>
+                <Picker
+                  selectedValue={unidadDeseadaTiempo}
+                  style={styles.picker}
+                  onValueChange={(itemValue) => setUnidadDeseadaTiempo(itemValue as string)}
+                >
+                  {UNIDADES_TIEMPO.map((unidad) => (
+                    <Picker.Item key={unidad} label={unidad} value={unidad} />
+                  ))}
+                </Picker>
+              </View>
+            )}
+          </View>
+        )}
+      </>
+    );
   };
 
   return (
@@ -202,205 +270,181 @@ const SimpleInterestScreen: React.FC = () => {
           </View>
           
           <View style={styles.formContainer}>
-            <Text style={styles.calculationModeText}>
-              Calculando: <Text style={styles.highlightText}>
-                {calculationType === CalculationType.INTEREST ? 'Interés' :
-                 calculationType === CalculationType.PRINCIPAL ? 'Capital Inicial' :
-                 calculationType === CalculationType.RATE ? 'Tasa de Interés' : 'Tiempo'}
-              </Text>
-            </Text>
-            
-            {/* Capital Inicial */}
-            <View style={styles.inputGroup}>
-              <Text style={[
-                styles.label, 
-                calculationType === CalculationType.PRINCIPAL && styles.disabledLabel
-              ]}>
-                Capital Inicial (C)
-                {calculationType === CalculationType.PRINCIPAL && ' (a calcular)'}
-              </Text>
-              {calculationType !== CalculationType.PRINCIPAL ? (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Ej. 1000"
-                  keyboardType="numeric"
-                  value={principal}
-                  onChangeText={setPrincipal}
-                />
-              ) : (
-                <View style={styles.disabledInput}>
-                  <Text style={styles.disabledText}>Se calculará automáticamente</Text>
-                </View>
-              )}
-            </View>
-            
-            {/* Tasa de Interés */}
-            <View style={styles.inputGroup}>
-              <Text style={[
-                styles.label, 
-                calculationType === CalculationType.RATE && styles.disabledLabel
-              ]}>
-                Tasa de Interés (i)
-                {calculationType === CalculationType.RATE && ' (a calcular)'}
-              </Text>
-              
-              <View style={styles.rowContainer}>
-                {calculationType !== CalculationType.RATE ? (
-                  <>
-                    <TextInput
-                      style={[styles.input, { flex: 3, marginRight: 10 }]}
-                      placeholder="Ej. 5"
-                      keyboardType="numeric"
-                      value={rate}
-                      onChangeText={setRate}
-                    />
-                    <UnitSelector
-                      label=""
-                      selectedUnit={rateUnit}
-                      onUnitChange={setRateUnit}
-                      accentColor="#4527A0"
-                    />
-                  </>
-                ) : (
-                  <View style={styles.disabledInput}>
-                    <Text style={styles.disabledText}>Se calculará automáticamente</Text>
-                  </View>
-                )}
-              </View>
-              
-              {calculationType === CalculationType.RATE && (
-                <View style={styles.outputUnitSelector}>
-                  <Text style={styles.outputUnitLabel}>Unidad de salida:</Text>
-                  <UnitSelector
-                    label=""
-                    selectedUnit={outputRateUnit}
-                    onUnitChange={setOutputRateUnit}
-                    accentColor="#4527A0"
-                  />
-                </View>
-              )}
-            </View>
-            
-            {/* Tiempo */}
-            <View style={styles.inputGroup}>
-              <Text style={[
-                styles.label, 
-                calculationType === CalculationType.TIME && styles.disabledLabel
-              ]}>
-                Tiempo (t)
-                {calculationType === CalculationType.TIME && ' (a calcular)'}
-              </Text>
-              
-              <View style={styles.rowContainer}>
-                {calculationType !== CalculationType.TIME ? (
-                  <>
-                    <TextInput
-                      style={[styles.input, { flex: 3, marginRight: 10 }]}
-                      placeholder="Ej. 2"
-                      keyboardType="numeric"
-                      value={time}
-                      onChangeText={setTime}
-                    />
-                    <UnitSelector
-                      label=""
-                      selectedUnit={timeUnit}
-                      onUnitChange={setTimeUnit}
-                      accentColor="#4527A0"
-                    />
-                  </>
-                ) : (
-                  <View style={styles.disabledInput}>
-                    <Text style={styles.disabledText}>Se calculará automáticamente</Text>
-                  </View>
-                )}
-              </View>
-              
-              {calculationType === CalculationType.TIME && (
-                <View style={styles.outputUnitSelector}>
-                  <Text style={styles.outputUnitLabel}>Unidad de salida:</Text>
-                  <UnitSelector
-                    label=""
-                    selectedUnit={outputTimeUnit}
-                    onUnitChange={setOutputTimeUnit}
-                    accentColor="#4527A0"
-                  />
-                </View>
-              )}
-            </View>
-            
-            {/* Interés */}
-            <View style={styles.inputGroup}>
-              <Text style={[
-                styles.label, 
-                calculationType === CalculationType.INTEREST && styles.disabledLabel
-              ]}>
-                Interés (I)
-                {calculationType === CalculationType.INTEREST && ' (a calcular)'}
-              </Text>
-              {calculationType !== CalculationType.INTEREST ? (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Ej. 100"
-                  keyboardType="numeric"
-                  value={interest}
-                  onChangeText={setInterest}
-                />
-              ) : (
-                <View style={styles.disabledInput}>
-                  <Text style={styles.disabledText}>Se calculará automáticamente</Text>
-                </View>
-              )}
-            </View>
-            
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={styles.calculateButton} 
-                onPress={performCalculation}
+            <View style={styles.modeSelector}>
+              <TouchableOpacity
+                style={[styles.modeButton, !modoAvanzado && styles.activeMode]}
+                onPress={() => setModoAvanzado(false)}
               >
-                <Text style={styles.buttonText}>Calcular</Text>
+                <Text style={[styles.modeText, !modoAvanzado && styles.activeModeText]}>
+                  Modo Básico
+                </Text>
               </TouchableOpacity>
               
-              <TouchableOpacity 
-                style={styles.clearButton} 
-                onPress={clearForm}
+              <TouchableOpacity
+                style={[styles.modeButton, modoAvanzado && styles.activeMode]}
+                onPress={() => setModoAvanzado(true)}
               >
-                <Text style={styles.clearButtonText}>Limpiar</Text>
+                <Text style={[styles.modeText, modoAvanzado && styles.activeModeText]}>
+                  Modo Avanzado
+                </Text>
               </TouchableOpacity>
             </View>
             
-            {result !== null && (
-              <View style={styles.resultContainer}>
-                <Text style={styles.resultLabel}>Resultados:</Text>
-                <View style={styles.resultBox}>
-                  <View style={styles.resultRow}>
-                    <Text style={styles.resultText}>{getResultLabel()}</Text>
-                    <Text style={styles.resultValue}>
-                      {calculationType !== CalculationType.RATE && '$'}
-                      {result.toFixed(2)}{getResultUnit()}
-                    </Text>
-                  </View>
-                  
-                  {totalAmount !== null && calculationType !== CalculationType.RATE && calculationType !== CalculationType.TIME && (
-                    <View style={styles.resultRow}>
-                      <Text style={styles.resultText}>Monto Total:</Text>
-                      <Text style={styles.resultValue}>${totalAmount.toFixed(2)}</Text>
-                    </View>
-                  )}
+            {!modoAvanzado ? (
+              // Formulario básico
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Capital Inicial (P)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ej. 1000"
+                    keyboardType="numeric"
+                    value={capital}
+                    onChangeText={setCapital}
+                  />
                 </View>
                 
-                <View style={styles.formulaContainer}>
-                  <Text style={styles.formulaTitle}>Fórmula Aplicada:</Text>
-                  <Text style={styles.formula}>
-                    {calculationType === CalculationType.INTEREST && 'I = C × i × t'}
-                    {calculationType === CalculationType.PRINCIPAL && 'C = I / (i × t)'}
-                    {calculationType === CalculationType.RATE && 'i = I / (C × t)'}
-                    {calculationType === CalculationType.TIME && 't = I / (C × i)'}
-                  </Text>
-                  <Text style={styles.formulaWhere}>
-                    Donde: I = Interés, C = Capital inicial, i = Tasa de interés, t = Tiempo
-                  </Text>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Tasa de Interés Anual (%)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ej. 5"
+                    keyboardType="numeric"
+                    value={rate}
+                    onChangeText={setRate}
+                  />
                 </View>
-              </View>
+                
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Tiempo (años)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ej. 2"
+                    keyboardType="numeric"
+                    value={time}
+                    onChangeText={setTime}
+                  />
+                </View>
+                
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={styles.calculateButton} 
+                    onPress={calculateInterest}
+                  >
+                    <Text style={styles.buttonText}>Calcular</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.clearButton} 
+                    onPress={clearForm}
+                  >
+                    <Text style={styles.clearButtonText}>Limpiar</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                {result !== null && (
+                  <View style={styles.resultContainer}>
+                    <Text style={styles.resultLabel}>Resultados:</Text>
+                    <View style={styles.resultBox}>
+                      <View style={styles.resultRow}>
+                        <Text style={styles.resultText}>Interés:</Text>
+                        <Text style={styles.resultValue}>${result.toFixed(2)}</Text>
+                      </View>
+                      <View style={styles.resultRow}>
+                        <Text style={styles.resultText}>Monto Total:</Text>
+                        <Text style={styles.resultValue}>${totalAmount?.toFixed(2)}</Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.formulaContainer}>
+                      <Text style={styles.formulaTitle}>Fórmula Aplicada:</Text>
+                      <Text style={styles.formula}>I = P × r × t</Text>
+                      <Text style={styles.formulaWhere}>
+                        Donde: I = Interés, P = Principal, r = Tasa de interés (decimal), t = Tiempo
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </>
+            ) : (
+              // Formulario avanzado
+              <>
+                <View style={styles.variableSelector}>
+                  <Text style={styles.selectorLabel}>¿Qué deseas calcular?</Text>
+                  <View style={styles.selectorButtonsContainer}>
+                    {['interes', 'capital', 'tasa', 'tiempo'].map((variable) => (
+                      <TouchableOpacity
+                        key={variable}
+                        style={[
+                          styles.selectorButton,
+                          variableACalcular === variable && styles.activeSelectorButton
+                        ]}
+                        onPress={() => {
+                          setVariableACalcular(variable as 'interes' | 'capital' | 'tasa' | 'tiempo');
+                          clearFormAvanzado();
+                        }}
+                      >
+                        <Text style={[
+                          styles.selectorButtonText,
+                          variableACalcular === variable && styles.activeSelectorButtonText
+                        ]}>
+                          {variable.charAt(0).toUpperCase() + variable.slice(1)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                
+                {renderizarCamposAvanzados()}
+                
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={styles.calculateButton} 
+                    onPress={calcularAvanzado}
+                  >
+                    <Text style={styles.buttonText}>Calcular</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.clearButton} 
+                    onPress={clearFormAvanzado}
+                  >
+                    <Text style={styles.clearButtonText}>Limpiar</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                {resultadoAvanzado && (
+                  <View style={styles.resultContainer}>
+                    <Text style={styles.resultLabel}>Resultado:</Text>
+                    <View style={styles.resultBox}>
+                      <View style={styles.resultRow}>
+                        <Text style={styles.resultText}>
+                          {resultadoAvanzado.tipo.charAt(0).toUpperCase() + resultadoAvanzado.tipo.slice(1)}:
+                        </Text>
+                        <Text style={styles.resultValue}>
+                          {resultadoAvanzado.tipo === 'tasa' ? `${resultadoAvanzado.valor.toFixed(2)}%` : 
+                            resultadoAvanzado.tipo === 'tiempo' ? `${resultadoAvanzado.valor.toFixed(2)}` : 
+                            `$${resultadoAvanzado.valor.toFixed(2)}`}
+                          {resultadoAvanzado.unidad ? ` ${resultadoAvanzado.unidad}` : ''}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.formulaContainer}>
+                      <Text style={styles.formulaTitle}>Fórmula Aplicada:</Text>
+                      <Text style={styles.formula}>
+                        {resultadoAvanzado.tipo === 'interes' ? 'I = P × r × t' : 
+                         resultadoAvanzado.tipo === 'capital' ? 'P = I / (r × t)' :
+                         resultadoAvanzado.tipo === 'tasa' ? 'r = I / (P × t)' :
+                         't = I / (P × r)'}
+                      </Text>
+                      <Text style={styles.formulaWhere}>
+                        Donde: I = Interés, P = Principal, r = Tasa de interés (decimal), t = Tiempo
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </>
             )}
           </View>
         </ScrollView>
@@ -437,15 +481,62 @@ const styles = StyleSheet.create({
   formContainer: {
     padding: 20,
   },
-  calculationModeText: {
-    fontSize: 16,
+  modeSelector: {
+    flexDirection: 'row',
     marginBottom: 20,
-    textAlign: 'center',
-    color: '#555',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#4527A0',
   },
-  highlightText: {
-    color: '#4527A0',
+  modeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+  },
+  modeText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  activeMode: {
+    backgroundColor: '#4527A0',
+  },
+  activeModeText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  variableSelector: {
+    marginBottom: 20,
+  },
+  selectorLabel: {
+    fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  selectorButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  selectorButton: {
+    width: '48%',
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  selectorButtonText: {
+    color: '#333',
+  },
+  activeSelectorButton: {
+    backgroundColor: '#4527A0',
+  },
+  activeSelectorButtonText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   inputGroup: {
     marginBottom: 15,
@@ -455,10 +546,6 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     color: '#333',
   },
-  disabledLabel: {
-    color: '#4527A0',
-    fontWeight: 'bold',
-  },
   input: {
     backgroundColor: '#fff',
     borderRadius: 8,
@@ -466,37 +553,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     fontSize: 16,
-    flex: 1,
   },
-  disabledInput: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#4527A0',
-    borderStyle: 'dashed',
+  pickerContainer: {
+    marginTop: 8,
   },
-  disabledText: {
-    color: '#666',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  rowContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  outputUnitSelector: {
-    marginTop: 10,
-  },
-  outputUnitLabel: {
+  pickerLabel: {
     fontSize: 14,
-    color: '#4527A0',
-    marginBottom: 5,
+    color: '#333',
+    marginBottom: 2,
+  },
+  picker: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: 10,
   },
   calculateButton: {
     backgroundColor: '#4527A0',
