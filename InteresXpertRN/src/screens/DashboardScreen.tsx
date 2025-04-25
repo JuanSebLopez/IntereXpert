@@ -31,7 +31,7 @@ const DashboardScreen: React.FC = () => {
     {
       title: "Cálculo de Gradiente",
       description: "Encuentra la gradiente de una serie de pagos",
-      screen: "",
+      screen: "GradientScreen",
       color: "#9C27B0",
     },
   ];
