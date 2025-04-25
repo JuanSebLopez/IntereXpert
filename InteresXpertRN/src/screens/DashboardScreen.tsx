@@ -11,34 +11,28 @@ const DashboardScreen: React.FC = () => {
 
   const calculatorOptions = [
     {
-      title: 'Interés Simple',
-      description: 'Calcula el interés sobre un capital fijo',
-      screen: 'SimpleInterest',
-      color: '#4527A0'
+      title: "Interés Simple",
+      description: "Calcula el interés sobre un capital fijo",
+      screen: "SimpleInterest",
+      color: "#4527A0",
     },
     {
-      title: 'Interés Compuesto',
-      description: 'Calcula el interés que se suma al capital',
-      screen: 'CompoundInterest',
-      color: '#7B1FA2'
+      title: "Interés Compuesto",
+      description: "Calcula el interés que se suma al capital",
+      screen: "CompoundRateInterestScreen",
+      color: "#7B1FA2",
     },
     {
-      title: 'Cálculo de Tasa Simple',
-      description: 'Encuentra la tasa de interés simple',
-      screen: 'SimpleRateInterest',
-      color: '#673AB7'
+      title: "Anualidades",
+      description: "Calcula pagos o recibos periódicos",
+      screen: "Annuity",
+      color: "#3F51B5",
     },
     {
-      title: 'Cálculo de Tasa Compuesta',
-      description: 'Encuentra la tasa de interés compuesto',
-      screen: 'CompoundRateInterest',
-      color: '#9C27B0'
-    },
-    {
-      title: 'Anualidades',
-      description: 'Calcula pagos o recibos periódicos',
-      screen: 'Annuity',
-      color: '#3F51B5'
+      title: "Cálculo de Gradiente",
+      description: "Encuentra la gradiente de una serie de pagos",
+      screen: "",
+      color: "#9C27B0",
     },
   ];
 

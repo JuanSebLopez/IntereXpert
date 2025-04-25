@@ -8,11 +8,9 @@ import WelcomeScreen from '../screens/WelcomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import DashboardScreen from '../screens/DashboardScreen';
-import SimpleInterestScreen from '../screens/SimpleInterestScreen';
-import CompoundInterestScreen from '../screens/CompoundInterestScreen';
-import SimpleRateInterestScreen from '../screens/SimpleRateInterestScreen';
-import CompoundRateInterestScreen from '../screens/CompoundRateInterestScreen';
-import AnnuityScreen from '../screens/AnnuityScreen';
+import SimpleInterestScreen from "../screens/SimpleInterestScreen";
+import CompoundRateInterestScreen from "../screens/CompoundRateInterestScreen";
+import AnnuityScreen from "../screens/AnnuityScreen";
 
 // Definición de tipos para los parámetros de navegación
 export type RootStackParamList = {
@@ -40,9 +38,10 @@ const MainTabNavigator: React.FC = () => {
     <Tab.Navigator>
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="SimpleInterest" component={SimpleInterestScreen} />
-      <Tab.Screen name="CompoundInterest" component={CompoundInterestScreen} />
-      <Tab.Screen name="SimpleRateInterest" component={SimpleRateInterestScreen} />
-      <Tab.Screen name="CompoundRateInterest" component={CompoundRateInterestScreen} />
+      <Tab.Screen
+        name="CompoundRateInterest"
+        component={CompoundRateInterestScreen}
+      />
       <Tab.Screen name="Annuity" component={AnnuityScreen} />
     </Tab.Navigator>
   );
